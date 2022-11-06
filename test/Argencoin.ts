@@ -40,7 +40,7 @@ describe("Argencoin", function () {
       const { argencoinContract, strange } = await deployArgencoinContract();
 
       await expect(argencoinContract.connect(strange).mint(strange.getAddress(), 1)).to.be
-        .revertedWith(`AccessControl: account ${await (await strange.getAddress()).toLocaleLowerCase()} is missing role ${await argencoinContract.MINTER_ROLE()}`);
+        .revertedWith(`AccessControl: account ${(await strange.getAddress()).toLocaleLowerCase()} is missing role ${await argencoinContract.MINTER_ROLE()}`);
     })
 
     it('Should mint if caller is the minter', async () => {
