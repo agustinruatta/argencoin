@@ -4,11 +4,11 @@ import { ethers } from "hardhat";
 
 describe("Argencoin", function () {
   async function deployArgencoinContract() {
-    const [owner, otherAccount] = await ethers.getSigners();
+    const [owner, minter] = await ethers.getSigners();
 
-    const argencoinContract = await (await ethers.getContractFactory("Argencoin")).deploy();
+    const argencoinContract = await (await ethers.getContractFactory("Argencoin")).deploy(minter.getAddress());
 
-    return { argencoinContract: argencoinContract, owner, otherAccount };
+    return { argencoinContract, owner, minter };
   }
 
   describe("Deployment", function () {
@@ -21,7 +21,13 @@ describe("Argencoin", function () {
     it("Should set the right owner", async function () {
       const { argencoinContract, owner } = await loadFixture(deployArgencoinContract);
 
-      expect(await argencoinContract.owner()).to.equal(owner.address);
+      expect(await argencoinContract.hasRole(await argencoinContract.DEFAULT_ADMIN_ROLE(), owner.getAddress())).to.equal(true);
+    });
+
+    it("Should set the right minter", async function () {
+      const { argencoinContract, minter } = await loadFixture(deployArgencoinContract);
+
+      expect(await argencoinContract.hasRole(await argencoinContract.MINTER_ROLE(), minter.getAddress())).to.equal(true);
     });
   });
 });
