@@ -1,0 +1,23 @@
+{
+  "name": "argencoin",
+  "version": "1.0.0",
+  "description": "Blockchain token that is pegged to Argentinian currency",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/agustinruatta/argencoin.git"
+  },
+  "author": "Agustín Ruatta <agustinruatta@gmail.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/agustinruatta/argencoin/issues"
+  },
+  "homepage": "https://github.com/agustinruatta/argencoin#readme",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.0",
+    "hardhat": "^2.12.2"
+  }
+}
