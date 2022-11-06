@@ -1,12 +1,12 @@
-import { loadFixture } from "@nomicfoundation/hardhat-network-helpers";
-import { expect } from "chai";
-import { ethers } from "hardhat";
+import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
+import { expect } from 'chai';
+import { ethers } from 'hardhat';
 
-describe("Argencoin", function () {
+describe('Argencoin', function () {
   async function configFixtures() {
     const [owner, minter, strange] = await ethers.getSigners();
 
-    const argencoinContract = await (await ethers.getContractFactory("Argencoin")).deploy(minter.getAddress());
+    const argencoinContract = await (await ethers.getContractFactory('Argencoin')).deploy(minter.getAddress());
 
     return { argencoinContract, owner, minter, strange };
   }
@@ -15,20 +15,20 @@ describe("Argencoin", function () {
     return loadFixture(configFixtures);
   }
 
-  describe("Deployment", function () {
-    it("Should deploy it", async function () {
+  describe('Deployment', function () {
+    it('Should deploy it', async () =>  {
       const { argencoinContract } = await deployArgencoinContract();
 
       expect(await argencoinContract.totalSupply()).to.equal(0);
     });
 
-    it("Should set the right owner", async function () {
+    it('Should set the right owner', async () =>  {
       const { argencoinContract, owner } = await deployArgencoinContract();
 
       expect(await argencoinContract.hasRole(await argencoinContract.DEFAULT_ADMIN_ROLE(), owner.getAddress())).to.equal(true);
     });
 
-    it("Should set the right minter", async function () {
+    it('Should set the right minter', async () =>  {
       const { argencoinContract, minter } = await deployArgencoinContract();
 
       expect(await argencoinContract.hasRole(await argencoinContract.MINTER_ROLE(), minter.getAddress())).to.equal(true);
