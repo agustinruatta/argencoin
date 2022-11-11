@@ -1,31 +1,35 @@
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
+import { CentralBank } from '../typechain-types';
 
-describe('CentralBank', function () {
-  async function configFixtures() {
-    const [deployer, owner, strange] = await ethers.getSigners();
+describe('CentralBank', async function () {
+  const [deployer, owner, strange] = await ethers.getSigners();
+  let centralBankContract: CentralBank;
 
-    const centralBankContract = await (await ethers.getContractFactory('CentralBank')).deploy(owner.getAddress());
+  beforeEach(async () => {
+    async function deployContract() {
+      return await (await ethers.getContractFactory('CentralBank')).deploy(owner.getAddress());
+    }
+    centralBankContract = await loadFixture(deployContract);
+  })
 
-    return { centralBankContract, deployer, owner, strange };
-  }
-
-  function deployCentralBankContract() {
-    return loadFixture(configFixtures);
-  }
-
-  describe('Deployment', function () {
+  describe('Deployment', () => {
     it('Should deploy it', async () =>  {
-      const { centralBankContract } = await deployCentralBankContract();
-
       expect(centralBankContract).to.not.null;
     });
 
     it('Should set the right owner', async () =>  {
-      const { centralBankContract, owner } = await deployCentralBankContract();
-
       expect(await centralBankContract.owner()).to.equal(await owner.getAddress());
+    });
+  });
+
+  describe('getPosition', () => {
+    it('Should return empty position', async () =>  {
+      let position = await centralBankContract.getPosition(strange.getAddress(), 'dai');
+
+      expect(position.collateralAmount).to.be.eq(0);
+      expect(position.mintedArgcAmount).to.be.eq(0);
     });
   });
 });
