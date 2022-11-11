@@ -5,8 +5,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 /// @custom:security-contact agustinruatta@gmail.com
 /// CentralBank has the responsability to mint, burn and has the balance of users.
-contract Argencoin is Ownable {
+contract CentralBank is Ownable {
     constructor(address ownerAddress) {
-        
+        _transferOwnership(ownerAddress);
     }
 }

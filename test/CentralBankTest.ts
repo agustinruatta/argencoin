@@ -25,7 +25,7 @@ describe('CentralBank', function () {
     it('Should set the right owner', async () =>  {
       const { centralBankContract, owner } = await deployCentralBankContract();
 
-      expect(await centralBankContract.owner()).to.equal(owner.getAddress());
+      expect(await centralBankContract.owner()).to.equal(await owner.getAddress());
     });
   });
 });
