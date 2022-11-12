@@ -1,19 +1,26 @@
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
-import { CentralBank } from '../typechain-types';
+import { CentralBank, Argencoin } from '../typechain-types';
 
 describe('CentralBank', async function () {
   const [deployer, owner, strange] = await ethers.getSigners();
   const DAI_CONTRACT_ADDRESS = '0x6B175474E89094C44Da98b954EedeAC495271d0F';
+
   let centralBankContract: CentralBank;
+  let argencoinContract: Argencoin;
 
   beforeEach(async () => {
-    async function deployContract() {
-      return await (await ethers.getContractFactory('CentralBank')).deploy(owner.getAddress());
+    async function deployCentralBankContract() {
+      return await (await ethers.getContractFactory('CentralBank')).deploy(owner.getAddress(), argencoinContract.address);
     }
 
-    centralBankContract = await loadFixture(deployContract);
+    async function deployArgencoinContract() {
+      return await (await ethers.getContractFactory('Argencoin')).deploy();
+    }
+
+    argencoinContract = await loadFixture(deployArgencoinContract);
+    centralBankContract = await loadFixture(deployCentralBankContract);
   })
 
   describe('Deployment', () => {

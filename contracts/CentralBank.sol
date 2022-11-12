@@ -3,6 +3,8 @@ pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+using SafeERC20 for IERC20;
 
 /// @custom:security-contact agustinruatta@gmail.com
 /// CentralBank has the responsability to mint, burn and has the users' positions.
@@ -17,8 +19,12 @@ contract CentralBank is Ownable {
 
     mapping (string => address) private collateralContracts;
 
-    constructor(address ownerAddress) {
+    IERC20 private argencoinAddress;
+
+    constructor(address ownerAddress, address _argencoinAddress) {
         _transferOwnership(ownerAddress);
+
+        argencoinAddress = IERC20(_argencoinAddress);
     }
 
     function getPosition(address userAddress, string memory token) public view returns (Position memory) {

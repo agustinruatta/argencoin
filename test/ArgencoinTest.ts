@@ -6,7 +6,8 @@ describe('Argencoin', function () {
   async function configFixtures() {
     const [owner, minter, strange] = await ethers.getSigners();
 
-    const argencoinContract = await (await ethers.getContractFactory('Argencoin')).deploy(minter.getAddress());
+    const argencoinContract = await (await ethers.getContractFactory('Argencoin')).deploy();
+    argencoinContract.grantRole(await argencoinContract.MINTER_ROLE(), await minter.getAddress())
 
     return { argencoinContract, owner, minter, strange };
   }
