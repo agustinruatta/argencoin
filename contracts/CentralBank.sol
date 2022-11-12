@@ -44,8 +44,12 @@ contract CentralBank is Ownable {
     }
 
     function getCollateralTokenAddress(string memory tokenSymbol) public view returns (address) {
-        require(collateralContracts[tokenSymbol] != address(0), "token is not set as collateral");
+        require(collateralContracts[tokenSymbol] != address(0), "Unkwnown collateral token.");
 
         return collateralContracts[tokenSymbol];
+    }
+
+    function mintArgencoin(uint256 argcAmount, string memory tokenSymbol, uint256 collateralAmount) public {
+        address collateralContract = getCollateralTokenAddress(tokenSymbol);
     }
 }

@@ -7,6 +7,7 @@ describe('CentralBank', async function () {
   const [deployer, owner, strange] = await ethers.getSigners();
   const DAI_CONTRACT_ADDRESS = '0x6B175474E89094C44Da98b954EedeAC495271d0F';
   const USDC_CONTRACT_ADDRESS = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
+  const TEN_ARGENCOINS = ethers.utils.parseUnits('10');
 
   let centralBankContract: CentralBank;
   let argencoinContract: Argencoin;
@@ -89,7 +90,13 @@ describe('CentralBank', async function () {
 
   describe('getCollateralToken', () => {
     it('Raise error if token is not set', async () =>  {
-      await expect(centralBankContract.getCollateralTokenAddress('dai')).to.be.revertedWith('token is not set as collateral');
+      await expect(centralBankContract.getCollateralTokenAddress('dai')).to.be.revertedWith('Unkwnown collateral token.');
+    });
+  });
+
+  describe('mintArgencoin', () => {
+    it('Should not allow mint unknown collateral token', async () => {
+      await expect(centralBankContract.mintArgencoin(TEN_ARGENCOINS, 'unk', 10)).to.be.revertedWith('Unkwnown collateral token.')
     });
   });
 });
