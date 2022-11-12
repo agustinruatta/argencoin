@@ -37,6 +37,12 @@ contract CentralBank is Ownable {
         collateralContracts[tokenSymbol] = erc20Contract;
     }
 
+    function editCollateralToken(string memory tokenSymbol, address erc20Contract) public onlyOwner {
+        require(collateralContracts[tokenSymbol] != address(0), "Token is not set yet. Please, call 'addNewColleteralToken' function.");
+
+        collateralContracts[tokenSymbol] = erc20Contract;
+    }
+
     function getCollateralTokenAddress(string memory tokenSymbol) public view returns (address) {
         require(collateralContracts[tokenSymbol] != address(0), "token is not set as collateral");
 
