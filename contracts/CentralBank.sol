@@ -2,6 +2,7 @@
 pragma solidity ^0.8.4;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/interfaces/IERC20.sol";
 
 /// @custom:security-contact agustinruatta@gmail.com
 /// CentralBank has the responsability to mint, burn and has the users' positions.
@@ -20,5 +21,9 @@ contract CentralBank is Ownable {
 
     function getPosition(address userAddress, string memory token) public view returns (Position memory) {
         return positions[userAddress][token];
+    }
+
+    function addNewCollateralToken(string memory tokenSymbol, address erc20Contract) public onlyOwner {
+
     }
 }

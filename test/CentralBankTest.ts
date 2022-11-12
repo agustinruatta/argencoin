@@ -5,12 +5,14 @@ import { CentralBank } from '../typechain-types';
 
 describe('CentralBank', async function () {
   const [deployer, owner, strange] = await ethers.getSigners();
+  const DAI_CONTRACT_ADDRESS = '0x6B175474E89094C44Da98b954EedeAC495271d0F';
   let centralBankContract: CentralBank;
 
   beforeEach(async () => {
     async function deployContract() {
       return await (await ethers.getContractFactory('CentralBank')).deploy(owner.getAddress());
     }
+
     centralBankContract = await loadFixture(deployContract);
   })
 
@@ -30,6 +32,12 @@ describe('CentralBank', async function () {
 
       expect(position.collateralAmount).to.be.eq(0);
       expect(position.mintedArgcAmount).to.be.eq(0);
+    });
+  });
+
+  describe('addNewCollateralToken', () => {
+    it('Should not allow if is not owner', async () => {
+      await expect(centralBankContract.connect(strange).addNewCollateralToken('dai', DAI_CONTRACT_ADDRESS)).to.be.revertedWith('Ownable: caller is not the owner');
     });
   });
 });
