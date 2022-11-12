@@ -56,4 +56,10 @@ describe('CentralBank', async function () {
       expect(await centralBankContract.getCollateralTokenAddress('dai')).to.be.eq(DAI_CONTRACT_ADDRESS);
     });
   });
+
+  describe('getCollateralToken', () => {
+    it('Raise error if token is not set', async () =>  {
+      await expect(centralBankContract.getCollateralTokenAddress('dai')).to.be.revertedWith('token is not set as collateral');
+    });
+  });
 });

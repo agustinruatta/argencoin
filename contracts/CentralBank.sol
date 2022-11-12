@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.4;
+pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
@@ -32,6 +32,8 @@ contract CentralBank is Ownable {
     }
 
     function getCollateralTokenAddress(string memory tokenSymbol) public view returns (address) {
+        require(collateralContracts[tokenSymbol] != address(0), "token is not set as collateral");
+
         return collateralContracts[tokenSymbol];
     }
 }
