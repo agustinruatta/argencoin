@@ -39,5 +39,21 @@ describe('CentralBank', async function () {
     it('Should not allow if is not owner', async () => {
       await expect(centralBankContract.connect(strange).addNewCollateralToken('dai', DAI_CONTRACT_ADDRESS)).to.be.revertedWith('Ownable: caller is not the owner');
     });
+
+    it('Should not allow add token again', async () => {
+      centralBankContract = centralBankContract.connect(owner);
+
+      centralBankContract.addNewCollateralToken('dai', DAI_CONTRACT_ADDRESS);
+
+      await expect(centralBankContract.addNewCollateralToken('dai', DAI_CONTRACT_ADDRESS)).to.be.revertedWith('Token is already set. Please, call \'editColleteralToken\' function.')
+    });
+
+    it('Allows to add token', async () => {
+      centralBankContract = centralBankContract.connect(owner);
+
+      centralBankContract.addNewCollateralToken('dai', DAI_CONTRACT_ADDRESS);
+
+      expect(await centralBankContract.getCollateralTokenAddress('dai')).to.be.eq(DAI_CONTRACT_ADDRESS);
+    });
   });
 });

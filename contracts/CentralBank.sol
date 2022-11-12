@@ -15,6 +15,8 @@ contract CentralBank is Ownable {
     // addres => token => position
     mapping (address => mapping (string => Position)) private positions;
 
+    mapping (string => address) private collateralContracts;
+
     constructor(address ownerAddress) {
         _transferOwnership(ownerAddress);
     }
@@ -24,6 +26,12 @@ contract CentralBank is Ownable {
     }
 
     function addNewCollateralToken(string memory tokenSymbol, address erc20Contract) public onlyOwner {
+        require(collateralContracts[tokenSymbol] == address(0), "Token is already set. Please, call 'editColleteralToken' function.");
 
+        collateralContracts[tokenSymbol] = erc20Contract;
+    }
+
+    function getCollateralTokenAddress(string memory tokenSymbol) public view returns (address) {
+        return collateralContracts[tokenSymbol];
     }
 }
