@@ -17,7 +17,7 @@ contract CentralBank is Ownable {
     // addres => token => position
     mapping (address => mapping (string => Position)) private positions;
 
-    mapping (string => address) private collateralContracts;
+    mapping (string => IERC20) private collateralContracts;
 
     IERC20 private argencoinAddress;
 
@@ -32,24 +32,24 @@ contract CentralBank is Ownable {
     }
 
     function addNewCollateralToken(string memory tokenSymbol, address erc20Contract) public onlyOwner {
-        require(collateralContracts[tokenSymbol] == address(0), "Token is already set. Please, call 'editColleteralToken' function.");
+        require(address(collateralContracts[tokenSymbol]) == address(0), "Token is already set. Please, call 'editColleteralToken' function.");
 
-        collateralContracts[tokenSymbol] = erc20Contract;
+        collateralContracts[tokenSymbol] = IERC20(erc20Contract);
     }
 
     function editCollateralToken(string memory tokenSymbol, address erc20Contract) public onlyOwner {
-        require(collateralContracts[tokenSymbol] != address(0), "Token is not set yet. Please, call 'addNewColleteralToken' function.");
+        require(address(collateralContracts[tokenSymbol]) != address(0), "Token is not set yet. Please, call 'addNewColleteralToken' function.");
 
-        collateralContracts[tokenSymbol] = erc20Contract;
+        collateralContracts[tokenSymbol] = IERC20(erc20Contract);
     }
 
-    function getCollateralTokenAddress(string memory tokenSymbol) public view returns (address) {
-        require(collateralContracts[tokenSymbol] != address(0), "Unkwnown collateral token.");
+    function getCollateralTokenAddress(string memory tokenSymbol) public view returns (IERC20) {
+        require(address(collateralContracts[tokenSymbol]) != address(0), "Unkwnown collateral token.");
 
         return collateralContracts[tokenSymbol];
     }
 
     function mintArgencoin(uint256 argcAmount, string memory tokenSymbol, uint256 collateralAmount) public {
-        address collateralContract = getCollateralTokenAddress(tokenSymbol);
+        IERC20 collateralContract = getCollateralTokenAddress(tokenSymbol);
     }
 }
