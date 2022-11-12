@@ -99,4 +99,16 @@ describe('CentralBank', async function () {
       await expect(centralBankContract.mintArgencoin(TEN_ARGENCOINS, 'unk', 10)).to.be.revertedWith('Unkwnown collateral token.')
     });
   });
+
+  describe('setCollateralPercentages', () => {
+    it('Should not allow if is not owner', async () => {
+      await expect(centralBankContract.setCollateralPercentages(15000, 12500)).to.be.revertedWith('Ownable: caller is not the owner');
+    });
+
+    it('Should not allow that collateral percentage is less than liquidation percentage', async () => {
+      centralBankContract = centralBankContract.connect(owner);
+
+      await expect(centralBankContract.setCollateralPercentages(12500, 12500)).to.be.revertedWith('Collateral percentage must be greater than liquidation percentage');
+    });
+  });
 });

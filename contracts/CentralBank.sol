@@ -27,6 +27,10 @@ contract CentralBank is Ownable {
         argencoinAddress = IERC20(_argencoinAddress);
     }
 
+    function setCollateralPercentages(uint32 collateralBasicPoints, uint32 liquidationBasicPoints) public onlyOwner {
+        require(collateralBasicPoints > liquidationBasicPoints, "Collateral percentage must be greater than liquidation percentage");
+    }
+
     function getPosition(address userAddress, string memory token) public view returns (Position memory) {
         return positions[userAddress][token];
     }
