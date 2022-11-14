@@ -27,8 +27,15 @@ contract CentralBank is Ownable {
         argencoinAddress = IERC20(_argencoinAddress);
     }
 
+    /**
+     * @param collateralBasicPoints This percentage indicates how much an user has to deposit in order mint some money. For example, if this param is 15000 (150%)
+     *  and user want to mint 200 ARGC, they have to deposit as least 300 ARGC as collateral.
+     * @param liquidationBasicPoints This percentage indicates what is the threshold in which a position can be liquidated. For example, if collateralBasicPoints
+     *  is 20000 (200%), liquidationBasicPoints is 12500(125%) and stable/ARGC is $400, it means that it can be liquidated when stable/ARGC is less than $250.
+     */
     function setCollateralPercentages(uint32 collateralBasicPoints, uint32 liquidationBasicPoints) public onlyOwner {
         require(collateralBasicPoints > liquidationBasicPoints, "Collateral percentage must be greater than liquidation percentage");
+        require(collateralBasicPoints <= 100 || liquidationBasicPoints <= 100, "Collateral and liquidation percentages must be greater 100% (10000 basic points)");
     }
 
     function getPosition(address userAddress, string memory token) public view returns (Position memory) {
