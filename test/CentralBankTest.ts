@@ -6,7 +6,6 @@ import { CentralBank, Argencoin, RatesOracle, Dai } from '../typechain-types';
 describe('CentralBank', async function () {
   const [deployer, owner, strange, minter] = await ethers.getSigners();
   const USDC_CONTRACT_ADDRESS = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
-  const TEN_ARGENCOINS = ethers.utils.parseUnits('10');
 
   let centralBankContract: CentralBank;
   let argencoinContract: Argencoin;
@@ -105,21 +104,22 @@ describe('CentralBank', async function () {
     });
   });
 
-  describe('mintArgencoin', () => {
-    const DAI_ARG_RATE = 30000;
+  describe('mintArgencoin using DAI as collateral', () => {
+    const DAI_ARG_RATE = ethers.utils.parseUnits('300');
     const COLLATERAL_PERCENTAGE = 150000;
 
-    this.beforeEach(() => {
+    beforeEach(() => {
       ratesOracleContract.setMockedRate(DAI_ARG_RATE);
       centralBankContract.setCollateralPercentages(COLLATERAL_PERCENTAGE, 12500);
+      centralBankContract.addNewCollateralToken('dai', daiContract.address);
     })
 
     it('Should not allow mint unknown collateral token', async () => {
-      await expect(centralBankContract.mintArgencoin(TEN_ARGENCOINS, 'unk', 10)).to.be.revertedWith('Unkwnown collateral token.')
+      await expect(centralBankContract.mintArgencoin(ethers.utils.parseUnits('2000'), 'unk', 10)).to.be.revertedWith('Unkwnown collateral token.')
     });
 
     it('Should not allow if is not enough collateral', async () => {
-      //TODO
+      await expect(centralBankContract.mintArgencoin(ethers.utils.parseUnits('200'), await daiContract.symbol(), ethers.utils.parseUnits('10'))).to.be.revertedWith('Not enough collateral');
     });
   });
 
