@@ -25,7 +25,7 @@ contract CentralBank is Ownable {
 
     IERC20 private argencoinAddress;
 
-    constructor(address ownerAddress, address _argencoinAddress) {
+    constructor(address ownerAddress, address _argencoinAddress, address _ratesOracleAddress) {
         _transferOwnership(ownerAddress);
 
         argencoinAddress = IERC20(_argencoinAddress);
@@ -78,5 +78,7 @@ contract CentralBank is Ownable {
 
     function mintArgencoin(uint256 argcAmount, string memory tokenSymbol, uint256 collateralAmount) public {
         IERC20 collateralContract = getCollateralTokenAddress(tokenSymbol);
+
+        
     }
 }

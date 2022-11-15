@@ -1,27 +1,39 @@
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
-import { CentralBank, Argencoin } from '../typechain-types';
+import { CentralBank, Argencoin, RatesOracle, Dai } from '../typechain-types';
 
 describe('CentralBank', async function () {
-  const [deployer, owner, strange] = await ethers.getSigners();
+  const [deployer, owner, strange, minter] = await ethers.getSigners();
   const DAI_CONTRACT_ADDRESS = '0x6B175474E89094C44Da98b954EedeAC495271d0F';
   const USDC_CONTRACT_ADDRESS = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
   const TEN_ARGENCOINS = ethers.utils.parseUnits('10');
 
   let centralBankContract: CentralBank;
   let argencoinContract: Argencoin;
+  let ratesOracleContract: RatesOracle;
+  let daiContract: Dai;
 
   beforeEach(async () => {
     async function deployCentralBankContract() {
-      return await (await ethers.getContractFactory('CentralBank')).deploy(owner.getAddress(), argencoinContract.address);
+      return await (await ethers.getContractFactory('CentralBank')).deploy(owner.getAddress(), argencoinContract.address, ratesOracleContract.address);
     }
 
     async function deployArgencoinContract() {
       return await (await ethers.getContractFactory('Argencoin')).deploy();
     }
 
+    async function deployRatesOracleContract() {
+      return await (await ethers.getContractFactory('RatesOracle')).deploy();
+    }
+
+    async function deployDaiContract() {
+      return await (await ethers.getContractFactory('Dai')).deploy(1);
+    }
+
     argencoinContract = await loadFixture(deployArgencoinContract);
+    ratesOracleContract = await loadFixture(deployRatesOracleContract);
+    daiContract = await loadFixture(deployDaiContract);
     centralBankContract = await loadFixture(deployCentralBankContract);
   })
 
@@ -95,8 +107,20 @@ describe('CentralBank', async function () {
   });
 
   describe('mintArgencoin', () => {
+    const DAI_ARG_RATE = 30000;
+    const COLLATERAL_PERCENTAGE = 150000;
+
+    this.beforeEach(() => {
+      ratesOracleContract.setMockedRate(DAI_ARG_RATE);
+      centralBankContract.setCollateralPercentages(COLLATERAL_PERCENTAGE, 12500);
+    })
+
     it('Should not allow mint unknown collateral token', async () => {
       await expect(centralBankContract.mintArgencoin(TEN_ARGENCOINS, 'unk', 10)).to.be.revertedWith('Unkwnown collateral token.')
+    });
+
+    it('Should not allow if is not enough collateral', async () => {
+      //TODO
     });
   });
 
