@@ -5,7 +5,6 @@ import { CentralBank, Argencoin, RatesOracle, Dai } from '../typechain-types';
 
 describe('CentralBank', async function () {
   const [deployer, owner, strange, minter] = await ethers.getSigners();
-  const DAI_CONTRACT_ADDRESS = '0x6B175474E89094C44Da98b954EedeAC495271d0F';
   const USDC_CONTRACT_ADDRESS = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
   const TEN_ARGENCOINS = ethers.utils.parseUnits('10');
 
@@ -58,35 +57,35 @@ describe('CentralBank', async function () {
 
   describe('addNewCollateralToken', () => {
     it('Should not allow if is not owner', async () => {
-      await expect(centralBankContract.connect(strange).addNewCollateralToken('dai', DAI_CONTRACT_ADDRESS)).to.be.revertedWith('Ownable: caller is not the owner');
+      await expect(centralBankContract.connect(strange).addNewCollateralToken('dai', daiContract.address)).to.be.revertedWith('Ownable: caller is not the owner');
     });
 
     it('Should not allow add token again', async () => {
       centralBankContract = centralBankContract.connect(owner);
 
-      centralBankContract.addNewCollateralToken('dai', DAI_CONTRACT_ADDRESS);
+      centralBankContract.addNewCollateralToken('dai', daiContract.address);
 
-      await expect(centralBankContract.addNewCollateralToken('dai', DAI_CONTRACT_ADDRESS)).to.be.revertedWith('Token is already set. Please, call \'editColleteralToken\' function.')
+      await expect(centralBankContract.addNewCollateralToken('dai', daiContract.address)).to.be.revertedWith('Token is already set. Please, call \'editColleteralToken\' function.')
     });
 
     it('Allows to add token', async () => {
       centralBankContract = centralBankContract.connect(owner);
 
-      await centralBankContract.addNewCollateralToken('dai', DAI_CONTRACT_ADDRESS);
+      await centralBankContract.addNewCollateralToken('dai', daiContract.address);
 
-      expect(await centralBankContract.getCollateralTokenAddress('dai')).to.be.eq(DAI_CONTRACT_ADDRESS);
+      expect(await centralBankContract.getCollateralTokenAddress('dai')).to.be.eq(daiContract.address);
     });
   });
 
   describe('editCollateralToken', () => {
     it('Should not allow if is not owner', async () => {
-      await expect(centralBankContract.connect(strange).editCollateralToken('dai', DAI_CONTRACT_ADDRESS)).to.be.revertedWith('Ownable: caller is not the owner');
+      await expect(centralBankContract.connect(strange).editCollateralToken('dai', daiContract.address)).to.be.revertedWith('Ownable: caller is not the owner');
     });
 
     it('Should not allow edit token if is not set', async () => {
       centralBankContract = centralBankContract.connect(owner);
 
-      await expect(centralBankContract.editCollateralToken('dai', DAI_CONTRACT_ADDRESS)).to.be.revertedWith('Token is not set yet. Please, call \'addNewColleteralToken\' function.')
+      await expect(centralBankContract.editCollateralToken('dai', daiContract.address)).to.be.revertedWith('Token is not set yet. Please, call \'addNewColleteralToken\' function.')
     });
 
     it('Allows to edit token', async () => {
@@ -94,9 +93,9 @@ describe('CentralBank', async function () {
 
       await centralBankContract.addNewCollateralToken('dai', USDC_CONTRACT_ADDRESS);
 
-      await centralBankContract.editCollateralToken('dai', DAI_CONTRACT_ADDRESS);
+      await centralBankContract.editCollateralToken('dai', daiContract.address);
 
-      expect(await centralBankContract.getCollateralTokenAddress('dai')).to.be.eq(DAI_CONTRACT_ADDRESS);
+      expect(await centralBankContract.getCollateralTokenAddress('dai')).to.be.eq(daiContract.address);
     });
   });
 
