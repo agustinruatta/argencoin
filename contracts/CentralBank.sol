@@ -6,9 +6,6 @@ import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 using SafeERC20 for IERC20;
 
-
-import "@openzeppelin/contracts/utils/Strings.sol";
-
 /// @custom:security-contact agustinruatta@gmail.com
 /// CentralBank has the responsability to mint, burn and has the users' positions.
 contract CentralBank is Ownable {
