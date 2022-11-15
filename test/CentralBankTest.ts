@@ -104,14 +104,23 @@ describe('CentralBank', async function () {
     });
   });
 
-  describe('mintArgencoin using DAI as collateral', () => {
-    const DAI_ARG_RATE = ethers.utils.parseUnits('300');
-    const COLLATERAL_PERCENTAGE = 150000;
+  describe('getMaxArgcAllowed using DAI as collateral', () => {
+    beforeEach(async () => {
+      await ratesOracleContract.connect(owner).setMockedRate(ethers.utils.parseUnits('300'));
+      await centralBankContract.connect(owner).setCollateralPercentages(150 * 100, 125 * 100);
+      await centralBankContract.connect(owner).addNewCollateralToken('dai', daiContract.address);
+    })
 
-    beforeEach(() => {
-      ratesOracleContract.setMockedRate(DAI_ARG_RATE);
-      centralBankContract.setCollateralPercentages(COLLATERAL_PERCENTAGE, 12500);
-      centralBankContract.addNewCollateralToken('dai', daiContract.address);
+    it('calculates it', async () => {
+      expect(await centralBankContract.getMaxArgcAllowed('dai', ethers.utils.parseUnits('10'))).to.be.eq(ethers.utils.parseUnits('2000'));
+    })
+  })
+
+  describe('mintArgencoin using DAI as collateral', () => {
+    beforeEach(async () => {
+      await ratesOracleContract.connect(owner).setMockedRate(ethers.utils.parseUnits('300'));
+      await centralBankContract.connect(owner).setCollateralPercentages(150 * 100, 125 * 100);
+      await centralBankContract.connect(owner).addNewCollateralToken('dai', daiContract.address);
     })
 
     it('Should not allow mint unknown collateral token', async () => {
@@ -119,7 +128,7 @@ describe('CentralBank', async function () {
     });
 
     it('Should not allow if is not enough collateral', async () => {
-      await expect(centralBankContract.mintArgencoin(ethers.utils.parseUnits('200'), await daiContract.symbol(), ethers.utils.parseUnits('10'))).to.be.revertedWith('Not enough collateral');
+      await expect(centralBankContract.mintArgencoin(ethers.utils.parseUnits('2000').add(1), 'dai', ethers.utils.parseUnits('10'))).to.be.revertedWith('Not enough collateral');
     });
   });
 

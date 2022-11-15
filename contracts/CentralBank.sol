@@ -4,6 +4,8 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "./RatesOracle.sol";
+
 using SafeERC20 for IERC20;
 
 /// @custom:security-contact agustinruatta@gmail.com
@@ -23,12 +25,18 @@ contract CentralBank is Ownable {
 
     uint32 private liquidationBasicPoints;
 
-    IERC20 private argencoinAddress;
+    IERC20 private argencoinContract;
+    RatesOracle private ratesContract;
+
+    uint16 private constant ONE_HUNDRED_BASIC_POINTS = 10000;
+    uint64 private constant ONE_COLLATERAL_TOKEN_UNIT = 10**18;
+
 
     constructor(address ownerAddress, address _argencoinAddress, address _ratesOracleAddress) {
         _transferOwnership(ownerAddress);
 
-        argencoinAddress = IERC20(_argencoinAddress);
+        argencoinContract = IERC20(_argencoinAddress);
+        ratesContract = RatesOracle(_ratesOracleAddress);
     }
 
     /**
@@ -59,6 +67,7 @@ contract CentralBank is Ownable {
     }
 
     function addNewCollateralToken(string memory tokenSymbol, address erc20Contract) public onlyOwner {
+        //TODO: ask for RatesOracle defintion
         require(address(collateralContracts[tokenSymbol]) == address(0), "Token is already set. Please, call 'editColleteralToken' function.");
 
         collateralContracts[tokenSymbol] = IERC20(erc20Contract);
@@ -76,9 +85,15 @@ contract CentralBank is Ownable {
         return collateralContracts[tokenSymbol];
     }
 
-    function mintArgencoin(uint256 argcAmount, string memory tokenSymbol, uint256 collateralAmount) public {
-        IERC20 collateralContract = getCollateralTokenAddress(tokenSymbol);
+    function getMaxArgcAllowed(string memory collateralTokenSymbol, uint256 collateralTokenAmount) public view returns (uint256) {
+        uint256 argcCollateralPeg = ratesContract.getArgencoinRate(collateralTokenSymbol);
 
-        
+        return ((collateralTokenAmount * argcCollateralPeg * ONE_HUNDRED_BASIC_POINTS) / (getCollateralBasicPoints())) / ONE_COLLATERAL_TOKEN_UNIT;
+    }
+
+    function mintArgencoin(uint256 argcAmount, string memory collateralTokenSymbol, uint256 collateralTokenAmount) public {
+        IERC20 collateralContract = getCollateralTokenAddress(collateralTokenSymbol);
+
+        require(getMaxArgcAllowed(collateralTokenSymbol, collateralTokenAmount) >= argcAmount, "Not enough collateral");
     }
 }
