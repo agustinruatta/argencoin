@@ -111,16 +111,30 @@ describe('CentralBank', async function () {
       await expect(centralBankContract.setCollateralPercentages(12500, 12500)).to.be.revertedWith('Collateral percentage must be greater than liquidation percentage');
     });
 
-    it('Should not allow if collateral percentage is not more than 100', async () => {
+    it('Should not allow if collateral percentage is not more than 100%', async () => {
       centralBankContract = centralBankContract.connect(owner);
 
       await expect(centralBankContract.setCollateralPercentages(10000, 9900)).to.be.revertedWith('Collateral and liquidation percentages must be greater 100% (10000 basic points)');
     })
 
-    it('Should not allow if liquidation percentage is not more than 100', async () => {
+    it('Should not allow if liquidation percentage is not more than 100%', async () => {
       centralBankContract = centralBankContract.connect(owner);
 
-      await expect(centralBankContract.setCollateralPercentages(20000, 9900)).to.be.revertedWith('Collateral and liquidation percentages must be greater 100% (10000 basic points)');
+      await expect(centralBankContract.setCollateralPercentages(20000, 10000)).to.be.revertedWith('Collateral and liquidation percentages must be greater 100% (10000 basic points)');
+    })
+
+    it('Should set collateral percentage', async () => {
+      centralBankContract = centralBankContract.connect(owner);
+      await centralBankContract.setCollateralPercentages(15000, 12500);
+
+      expect(await centralBankContract.getCollateralBasicPoints()).to.be.eq(15000);
+    })
+
+    it('Should set liquidation percentage', async () => {
+      centralBankContract = centralBankContract.connect(owner);
+      await centralBankContract.setCollateralPercentages(20000, 12500);
+
+      expect(await centralBankContract.getLiquidationBasicPoints()).to.be.eq(12500);
     })
   });
 });
