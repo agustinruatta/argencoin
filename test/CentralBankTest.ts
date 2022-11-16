@@ -130,6 +130,10 @@ describe('CentralBank', async function () {
     it('Should not allow if is not enough collateral', async () => {
       await expect(centralBankContract.mintArgencoin(ethers.utils.parseUnits('2000').add(1), 'dai', ethers.utils.parseUnits('10'))).to.be.revertedWith('Not enough collateral');
     });
+
+    it('Should throw an error if can not transfer collateral', async () => {
+      await expect(centralBankContract.mintArgencoin(ethers.utils.parseUnits('2000'), 'dai', ethers.utils.parseUnits('20'))).to.be.revertedWith('Dai/insufficient-balance');
+    });
   });
 
   describe('setCollateralPercentages', () => {

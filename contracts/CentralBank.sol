@@ -95,5 +95,8 @@ contract CentralBank is Ownable {
         IERC20 collateralContract = getCollateralTokenAddress(collateralTokenSymbol);
 
         require(getMaxArgcAllowed(collateralTokenSymbol, collateralTokenAmount) >= argcAmount, "Not enough collateral");
+
+        //TODO: check balance before and after
+        collateralContract.safeTransferFrom(msg.sender, address(this), collateralTokenAmount);
     }
 }
