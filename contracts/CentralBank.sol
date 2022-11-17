@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./RatesOracle.sol";
+import "./Argencoin.sol";
 
 using SafeERC20 for IERC20;
 
@@ -25,7 +26,7 @@ contract CentralBank is Ownable {
 
     uint32 private liquidationBasicPoints;
 
-    IERC20 private argencoinContract;
+    Argencoin private argencoinContract;
     RatesOracle private ratesContract;
 
     uint16 private constant ONE_HUNDRED_BASIC_POINTS = 10000;
@@ -35,7 +36,7 @@ contract CentralBank is Ownable {
     constructor(address ownerAddress, address _argencoinAddress, address _ratesOracleAddress) {
         _transferOwnership(ownerAddress);
 
-        argencoinContract = IERC20(_argencoinAddress);
+        argencoinContract = Argencoin(_argencoinAddress);
         ratesContract = RatesOracle(_ratesOracleAddress);
     }
 
@@ -96,7 +97,12 @@ contract CentralBank is Ownable {
 
         require(getMaxArgcAllowed(collateralTokenSymbol, collateralTokenAmount) >= argcAmount, "Not enough collateral");
 
-        //TODO: check balance before and after
+        uint256 centralBankBalanceBeforeTransfer = collateralContract.balanceOf(address(this));
+
         collateralContract.safeTransferFrom(msg.sender, address(this), collateralTokenAmount);
+
+        require(collateralContract.balanceOf(address(this)) == centralBankBalanceBeforeTransfer + collateralTokenAmount, "Collateral transfer was not done");
+
+        argencoinContract.mint(msg.sender, argcAmount);
     }
 }

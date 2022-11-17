@@ -4,7 +4,7 @@ import { ethers } from 'hardhat';
 import { CentralBank, Argencoin, RatesOracle, Dai } from '../typechain-types';
 
 describe('CentralBank', async function () {
-  const [deployer, owner, strange, minter] = await ethers.getSigners();
+  const [deployer, centralBankOwner, daiOwner, strange, minter] = await ethers.getSigners();
   const USDC_CONTRACT_ADDRESS = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
 
   let centralBankContract: CentralBank;
@@ -14,11 +14,11 @@ describe('CentralBank', async function () {
 
   beforeEach(async () => {
     async function deployCentralBankContract() {
-      return await (await ethers.getContractFactory('CentralBank')).deploy(owner.getAddress(), argencoinContract.address, ratesOracleContract.address);
+      return await (await ethers.getContractFactory('CentralBank')).deploy(centralBankOwner.address, argencoinContract.address, ratesOracleContract.address);
     }
 
     async function deployArgencoinContract() {
-      return await (await ethers.getContractFactory('Argencoin')).deploy();
+      return await (await ethers.getContractFactory('Argencoin')).connect(centralBankOwner).deploy();
     }
 
     async function deployRatesOracleContract() {
@@ -26,7 +26,7 @@ describe('CentralBank', async function () {
     }
 
     async function deployDaiContract() {
-      return await (await ethers.getContractFactory('Dai')).deploy(1);
+      return await (await ethers.getContractFactory('Dai')).connect(daiOwner).deploy(1);
     }
 
     argencoinContract = await loadFixture(deployArgencoinContract);
@@ -41,7 +41,7 @@ describe('CentralBank', async function () {
     });
 
     it('Should set the right owner', async () =>  {
-      expect(await centralBankContract.owner()).to.equal(await owner.getAddress());
+      expect(await centralBankContract.owner()).to.equal(await centralBankOwner.getAddress());
     });
   });
 
@@ -60,7 +60,7 @@ describe('CentralBank', async function () {
     });
 
     it('Should not allow add token again', async () => {
-      centralBankContract = centralBankContract.connect(owner);
+      centralBankContract = centralBankContract.connect(centralBankOwner);
 
       centralBankContract.addNewCollateralToken('dai', daiContract.address);
 
@@ -68,7 +68,7 @@ describe('CentralBank', async function () {
     });
 
     it('Allows to add token', async () => {
-      centralBankContract = centralBankContract.connect(owner);
+      centralBankContract = centralBankContract.connect(centralBankOwner);
 
       await centralBankContract.addNewCollateralToken('dai', daiContract.address);
 
@@ -82,13 +82,13 @@ describe('CentralBank', async function () {
     });
 
     it('Should not allow edit token if is not set', async () => {
-      centralBankContract = centralBankContract.connect(owner);
+      centralBankContract = centralBankContract.connect(centralBankOwner);
 
       await expect(centralBankContract.editCollateralToken('dai', daiContract.address)).to.be.revertedWith('Token is not set yet. Please, call \'addNewColleteralToken\' function.')
     });
 
     it('Allows to edit token', async () => {
-      centralBankContract = centralBankContract.connect(owner);
+      centralBankContract = centralBankContract.connect(centralBankOwner);
 
       await centralBankContract.addNewCollateralToken('dai', USDC_CONTRACT_ADDRESS);
 
@@ -106,9 +106,9 @@ describe('CentralBank', async function () {
 
   describe('getMaxArgcAllowed using DAI as collateral', () => {
     beforeEach(async () => {
-      await ratesOracleContract.connect(owner).setMockedRate(ethers.utils.parseUnits('300'));
-      await centralBankContract.connect(owner).setCollateralPercentages(150 * 100, 125 * 100);
-      await centralBankContract.connect(owner).addNewCollateralToken('dai', daiContract.address);
+      await ratesOracleContract.connect(centralBankOwner).setMockedRate(ethers.utils.parseUnits('300'));
+      await centralBankContract.connect(centralBankOwner).setCollateralPercentages(150 * 100, 125 * 100);
+      await centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address);
     })
 
     it('calculates it', async () => {
@@ -118,9 +118,9 @@ describe('CentralBank', async function () {
 
   describe('mintArgencoin using DAI as collateral', () => {
     beforeEach(async () => {
-      await ratesOracleContract.connect(owner).setMockedRate(ethers.utils.parseUnits('300'));
-      await centralBankContract.connect(owner).setCollateralPercentages(150 * 100, 125 * 100);
-      await centralBankContract.connect(owner).addNewCollateralToken('dai', daiContract.address);
+      await ratesOracleContract.connect(centralBankOwner).setMockedRate(ethers.utils.parseUnits('300'));
+      await centralBankContract.connect(centralBankOwner).setCollateralPercentages(150 * 100, 125 * 100);
+      await centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address);
     })
 
     it('Should not allow mint unknown collateral token', async () => {
@@ -132,7 +132,37 @@ describe('CentralBank', async function () {
     });
 
     it('Should throw an error if can not transfer collateral', async () => {
-      await expect(centralBankContract.mintArgencoin(ethers.utils.parseUnits('2000'), 'dai', ethers.utils.parseUnits('20'))).to.be.revertedWith('Dai/insufficient-balance');
+      await expect(centralBankContract.connect(minter).mintArgencoin(ethers.utils.parseUnits('2000'), 'dai', ethers.utils.parseUnits('20'))).to.be.revertedWith('Dai/insufficient-balance');
+    });
+
+    it('Should throw an error if transfer has not been approved', async () => {
+      await daiContract.connect(daiOwner).mint(minter.address, ethers.utils.parseUnits('20'));
+      
+      await expect(centralBankContract.connect(strange).mintArgencoin(ethers.utils.parseUnits('2000'), 'dai', ethers.utils.parseUnits('10'))).to.be.revertedWith('Dai/insufficient-balance');
+    });
+
+    it('checks that collateral was transfered', async () => {
+      //Prepare test
+      await daiContract.connect(daiOwner).mint(minter.address, ethers.utils.parseUnits('20'));
+      await daiContract.connect(minter).approve(centralBankContract.address, ethers.utils.parseUnits('20'));
+
+      //Mint argencoin
+      await centralBankContract.connect(minter).mintArgencoin(ethers.utils.parseUnits('2000'), 'dai', ethers.utils.parseUnits('15'))
+      
+      //Check that collateral balance 
+      expect(await daiContract.balanceOf(centralBankContract.address)).to.be.eq(ethers.utils.parseUnits('15'));
+    });
+
+    it('checks that argencoin was minted', async () => {
+      //Prepare test
+      await daiContract.connect(daiOwner).mint(minter.address, ethers.utils.parseUnits('20'));
+      await daiContract.connect(minter).approve(centralBankContract.address, ethers.utils.parseUnits('20'));
+
+      //Mint argencoin
+      await centralBankContract.connect(minter).mintArgencoin(ethers.utils.parseUnits('2000'), 'dai', ethers.utils.parseUnits('15'))
+      
+      //Check that collateral balance 
+      expect(await argencoinContract.balanceOf(minter.address)).to.be.eq(ethers.utils.parseUnits('2000'));
     });
   });
 
@@ -142,32 +172,32 @@ describe('CentralBank', async function () {
     });
 
     it('Should not allow it if liquidation percentage is not less than collateral percentage', async () => {
-      centralBankContract = centralBankContract.connect(owner);
+      centralBankContract = centralBankContract.connect(centralBankOwner);
 
       await expect(centralBankContract.setCollateralPercentages(12500, 12500)).to.be.revertedWith('Collateral percentage must be greater than liquidation percentage');
     });
 
     it('Should not allow if collateral percentage is not more than 100%', async () => {
-      centralBankContract = centralBankContract.connect(owner);
+      centralBankContract = centralBankContract.connect(centralBankOwner);
 
       await expect(centralBankContract.setCollateralPercentages(10000, 9900)).to.be.revertedWith('Collateral and liquidation percentages must be greater 100% (10000 basic points)');
     })
 
     it('Should not allow if liquidation percentage is not more than 100%', async () => {
-      centralBankContract = centralBankContract.connect(owner);
+      centralBankContract = centralBankContract.connect(centralBankOwner);
 
       await expect(centralBankContract.setCollateralPercentages(20000, 10000)).to.be.revertedWith('Collateral and liquidation percentages must be greater 100% (10000 basic points)');
     })
 
     it('Should set collateral percentage', async () => {
-      centralBankContract = centralBankContract.connect(owner);
+      centralBankContract = centralBankContract.connect(centralBankOwner);
       await centralBankContract.setCollateralPercentages(15000, 12500);
 
       expect(await centralBankContract.getCollateralBasicPoints()).to.be.eq(15000);
     })
 
     it('Should set liquidation percentage', async () => {
-      centralBankContract = centralBankContract.connect(owner);
+      centralBankContract = centralBankContract.connect(centralBankOwner);
       await centralBankContract.setCollateralPercentages(20000, 12500);
 
       expect(await centralBankContract.getLiquidationBasicPoints()).to.be.eq(12500);
