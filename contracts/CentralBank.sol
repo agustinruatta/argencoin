@@ -26,6 +26,8 @@ contract CentralBank is Ownable {
 
     uint32 private liquidationBasicPoints;
 
+    uint16 private mintingFeeBasicPoints;
+
     Argencoin private argencoinContract;
     RatesOracle private ratesContract;
 
@@ -33,11 +35,12 @@ contract CentralBank is Ownable {
     uint64 private constant ONE_COLLATERAL_TOKEN_UNIT = 10**18;
 
 
-    constructor(address ownerAddress, address _argencoinAddress, address _ratesOracleAddress) {
+    constructor(address ownerAddress, address _argencoinAddress, address _ratesOracleAddress, uint16 _mintingFeeBasicPoints) {
         _transferOwnership(ownerAddress);
 
         argencoinContract = Argencoin(_argencoinAddress);
         ratesContract = RatesOracle(_ratesOracleAddress);
+        mintingFeeBasicPoints = _mintingFeeBasicPoints;
     }
 
     /**
@@ -60,6 +63,15 @@ contract CentralBank is Ownable {
 
     function getLiquidationBasicPoints() public view returns (uint32) {
         return liquidationBasicPoints;
+    }
+
+    function setMintingFee(uint16 _mintingFeeBasicPoints) public onlyOwner {
+        require(_mintingFeeBasicPoints <= ONE_HUNDRED_BASIC_POINTS, "Max minting fee is 10000 basic points");
+        mintingFeeBasicPoints = _mintingFeeBasicPoints;
+    }
+
+    function getMintingFee() public view returns (uint16) {
+        return mintingFeeBasicPoints;
     }
 
     //TODO: it does not make sense

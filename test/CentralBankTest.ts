@@ -5,6 +5,7 @@ import { CentralBank, Argencoin, RatesOracle, Dai } from '../typechain-types';
 
 describe('CentralBank', async function () {
   const [argcAdmin, centralBankOwner, daiOwner, strange, minter] = await ethers.getSigners();
+  const DEFAULT_MINTING_FEE = 100;
 
   let centralBankContract: CentralBank;
   let argencoinContract: Argencoin;
@@ -13,7 +14,7 @@ describe('CentralBank', async function () {
 
   beforeEach(async () => {
     async function deployCentralBankContract() {
-      return await (await ethers.getContractFactory('CentralBank')).deploy(centralBankOwner.address, argencoinContract.address, ratesOracleContract.address);
+      return await (await ethers.getContractFactory('CentralBank')).deploy(centralBankOwner.address, argencoinContract.address, ratesOracleContract.address, DEFAULT_MINTING_FEE);
     }
 
     async function deployArgencoinContract() {
@@ -75,6 +76,28 @@ describe('CentralBank', async function () {
 
       expect(await centralBankContract.getCollateralTokenAddress('dai')).to.be.eq(daiContract.address);
     });
+  });
+
+  describe('setMintingFee', () => {
+    it('should not allow if is not owner', async () => {
+      await expect(centralBankContract.setMintingFee(DEFAULT_MINTING_FEE)).to.be.revertedWith('Ownable: caller is not the owner');
+    })
+
+    it('should not allow to set more than 100%', async () => {
+      await expect(centralBankContract.connect(centralBankOwner).setMintingFee(10001)).to.be.revertedWith('Max minting fee is 10000 basic points');
+    })
+
+    it('sets minting fee', async () => {
+      await centralBankContract.connect(centralBankOwner).setMintingFee(2000);
+
+      expect(await centralBankContract.getMintingFee()).to.be.eq(2000);
+    })
+  });
+
+  describe('getMintingFee', () => {
+    it('returns minting fee', async () => {
+      expect(await centralBankContract.getMintingFee()).to.be.eq(DEFAULT_MINTING_FEE);
+    })
   });
 
   describe('editCollateralToken', () => {
