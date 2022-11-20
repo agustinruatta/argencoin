@@ -1,4 +1,4 @@
-![CI workflow status](https://github.com/agustinruatta/argencoin/actions/workflows/CI.yml/badge.svg)
+![CI workflow status](https://github.com/agustinruatta/argencoin/actions/workflows/CI.yml/badge.svg?branch=main)
 
 # Argencoin
 Blockchain token that is pegged to Argentinian currency.
