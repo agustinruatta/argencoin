@@ -16,3 +16,6 @@ REPORT_GAS=true npx hardhat test
 npx hardhat node
 npx hardhat run scripts/deploy.ts
 ```
+
+# Ubiquitous language
+- user: address that interact to Argencoin protocol, who can mint ARGC, burn them, etc.
