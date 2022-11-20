@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./RatesOracle.sol";
 import "./Argencoin.sol";
+import "./Staking.sol";
 
 using SafeERC20 for IERC20;
 
@@ -30,6 +31,7 @@ contract CentralBank is Ownable {
 
     Argencoin private argencoinContract;
     RatesOracle private ratesContract;
+    Staking private stakingContract;
 
     uint16 private constant ONE_HUNDRED_BASIC_POINTS = 10000;
     uint64 private constant ONE_COLLATERAL_TOKEN_UNIT = 10**18;
@@ -38,16 +40,18 @@ contract CentralBank is Ownable {
         address ownerAddress,
         address _argencoinAddress,
         address _ratesOracleAddress,
+        address _stakingContractAddress,
         uint32 _collateralBasicPoints,
         uint32 _liquidationBasicPoints,
         uint16 _mintingFeeBasicPoints
     ) {
         argencoinContract = Argencoin(_argencoinAddress);
         ratesContract = RatesOracle(_ratesOracleAddress);
+        stakingContract = Staking(_stakingContractAddress);
 
         setCollateralPercentages(_collateralBasicPoints, _liquidationBasicPoints);
         setMintingFee(_mintingFeeBasicPoints);
-        
+
         _transferOwnership(ownerAddress);
     }
 
@@ -107,22 +111,37 @@ contract CentralBank is Ownable {
     }
 
     function getMaxArgcAllowed(string memory collateralTokenSymbol, uint256 collateralTokenAmount) public view returns (uint256) {
+        uint256 feeAmount = (collateralTokenAmount * mintingFeeBasicPoints) / ONE_HUNDRED_BASIC_POINTS;
         uint256 argcCollateralPeg = ratesContract.getArgencoinRate(collateralTokenSymbol);
 
-        return ((collateralTokenAmount * argcCollateralPeg * ONE_HUNDRED_BASIC_POINTS) / (getCollateralBasicPoints())) / ONE_COLLATERAL_TOKEN_UNIT;
+        return (((collateralTokenAmount - feeAmount) * argcCollateralPeg * ONE_HUNDRED_BASIC_POINTS) / (getCollateralBasicPoints())) / ONE_COLLATERAL_TOKEN_UNIT;
     }
 
     function mintArgencoin(uint256 argcAmount, string memory collateralTokenSymbol, uint256 collateralTokenAmount) public {
         IERC20 collateralContract = getCollateralTokenAddress(collateralTokenSymbol);
 
+        //Check if collateral is enough
         require(getMaxArgcAllowed(collateralTokenSymbol, collateralTokenAmount) >= argcAmount, "Not enough collateral");
 
+        //Calculate collateral and fee amounts
+        uint256 feeAmount = (collateralTokenAmount * mintingFeeBasicPoints) / ONE_HUNDRED_BASIC_POINTS;
+        uint256 collateralTokenAmountAfterFee = collateralTokenAmount - feeAmount;
+
+        //Transfer argencoin collateral
         uint256 centralBankBalanceBeforeTransfer = collateralContract.balanceOf(address(this));
 
-        collateralContract.safeTransferFrom(msg.sender, address(this), collateralTokenAmount);
+        collateralContract.safeTransferFrom(msg.sender, address(this), collateralTokenAmountAfterFee);
 
-        require(collateralContract.balanceOf(address(this)) == centralBankBalanceBeforeTransfer + collateralTokenAmount, "Collateral transfer was not done");
+        require(collateralContract.balanceOf(address(this)) == centralBankBalanceBeforeTransfer + collateralTokenAmountAfterFee, "Collateral transfer was not done");
 
+        //Transfer fee
+        uint256 stakingBalanceBeforeTransfer = collateralContract.balanceOf(address(stakingContract));
+
+        collateralContract.safeTransferFrom(msg.sender, address(stakingContract), feeAmount);
+
+        require(collateralContract.balanceOf(address(stakingContract)) == stakingBalanceBeforeTransfer + feeAmount, "Fee collateral transfer was not done");
+
+        //Mint argencoin
         argencoinContract.mint(msg.sender, argcAmount);
     }
 }

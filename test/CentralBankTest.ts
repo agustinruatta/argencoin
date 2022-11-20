@@ -1,10 +1,10 @@
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
-import { CentralBank, Argencoin, RatesOracle, Dai } from '../typechain-types';
+import { CentralBank, Argencoin, RatesOracle, Dai, Staking } from '../typechain-types';
 
 describe('CentralBank', async function () {
-  const [argcAdmin, centralBankOwner, daiOwner, strange, minter] = await ethers.getSigners();
+  const [argcAdmin, centralBankOwner, daiOwner, strange, minter, stakingOwner] = await ethers.getSigners();
   const DEFAULT_COLLATERAL_PERCENTAGE = 150 * 100;
   const DEFAULT_LIQUIDATION_PERCENTAGE = 125 * 100;
   const DEFAULT_MINTING_FEE = 100;
@@ -13,6 +13,7 @@ describe('CentralBank', async function () {
   let argencoinContract: Argencoin;
   let ratesOracleContract: RatesOracle;
   let daiContract: Dai;
+  let stakingContract: Staking;
 
   beforeEach(async () => {
     async function deployCentralBankContract() {
@@ -21,6 +22,7 @@ describe('CentralBank', async function () {
           centralBankOwner.address,
           argencoinContract.address,
           ratesOracleContract.address,
+          stakingContract.address,
           DEFAULT_COLLATERAL_PERCENTAGE,
           DEFAULT_LIQUIDATION_PERCENTAGE,
           DEFAULT_MINTING_FEE
@@ -39,9 +41,14 @@ describe('CentralBank', async function () {
       return await (await ethers.getContractFactory('Dai')).connect(daiOwner).deploy(1);
     }
 
+    async function deployStakingContract() {
+      return await (await ethers.getContractFactory('Staking')).connect(stakingOwner).deploy();
+    }
+
     argencoinContract = await loadFixture(deployArgencoinContract);
     ratesOracleContract = await loadFixture(deployRatesOracleContract);
     daiContract = await loadFixture(deployDaiContract);
+    stakingContract = await loadFixture(deployStakingContract);
     centralBankContract = await loadFixture(deployCentralBankContract);
 
     await argencoinContract.grantRole(await argencoinContract.MINTER_ROLE(), centralBankContract.address)
@@ -147,7 +154,7 @@ describe('CentralBank', async function () {
     })
 
     it('calculates it', async () => {
-      expect(await centralBankContract.getMaxArgcAllowed('dai', ethers.utils.parseUnits('10'))).to.be.eq(ethers.utils.parseUnits('2000'));
+      expect(await centralBankContract.getMaxArgcAllowed('dai', ethers.utils.parseUnits('10'))).to.be.eq(ethers.utils.parseUnits('1980'));
     })
   })
 
@@ -162,19 +169,19 @@ describe('CentralBank', async function () {
     });
 
     it('Should not allow if is not enough collateral', async () => {
-      await expect(centralBankContract.connect(minter).mintArgencoin(ethers.utils.parseUnits('2000').add(1), 'dai', ethers.utils.parseUnits('10')))
+      await expect(centralBankContract.connect(minter).mintArgencoin(ethers.utils.parseUnits('1980').add(1), 'dai', ethers.utils.parseUnits('10')))
         .to.be.revertedWith('Not enough collateral');
     });
 
     it('Should throw an error if can not transfer collateral', async () => {
-      await expect(centralBankContract.connect(minter).mintArgencoin(ethers.utils.parseUnits('2000'), 'dai', ethers.utils.parseUnits('20')))
+      await expect(centralBankContract.connect(minter).mintArgencoin(ethers.utils.parseUnits('1980'), 'dai', ethers.utils.parseUnits('20')))
         .to.be.revertedWith('Dai/insufficient-balance');
     });
 
     it('Should throw an error if transfer has not been approved', async () => {
       await daiContract.connect(daiOwner).mint(minter.address, ethers.utils.parseUnits('20'));
       
-      await expect(centralBankContract.connect(strange).mintArgencoin(ethers.utils.parseUnits('2000'), 'dai', ethers.utils.parseUnits('10')))
+      await expect(centralBankContract.connect(strange).mintArgencoin(ethers.utils.parseUnits('1980'), 'dai', ethers.utils.parseUnits('10')))
         .to.be.revertedWith('Dai/insufficient-balance');
     });
 
@@ -186,9 +193,15 @@ describe('CentralBank', async function () {
       //Mint argencoin
       await centralBankContract.connect(minter).mintArgencoin(ethers.utils.parseUnits('2000'), 'dai', ethers.utils.parseUnits('15'))
       
-      //Check that collateral balance 
-      expect(await daiContract.balanceOf(centralBankContract.address)).to.be.eq(ethers.utils.parseUnits('15'));
+      //Check collateral was transfered
+      expect(await daiContract.balanceOf(centralBankContract.address)).to.be.eq(ethers.utils.parseUnits('14.85'));
+
+      //Check fee was transfered
+      expect(await daiContract.balanceOf(stakingContract.address)).to.be.eq(ethers.utils.parseUnits('0.15'));
+
+      //Check argencoin were minted
       expect(await argencoinContract.balanceOf(minter.address)).to.be.eq(ethers.utils.parseUnits('2000'));
+
     });
   });
 
