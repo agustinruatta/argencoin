@@ -127,21 +127,26 @@ contract CentralBank is Ownable {
         uint256 feeAmount = (collateralTokenAmount * mintingFeeBasicPoints) / ONE_HUNDRED_BASIC_POINTS;
         uint256 collateralTokenAmountAfterFee = collateralTokenAmount - feeAmount;
 
-        //Transfer argencoin collateral
+        transferArgencoinCollateral(collateralContract, collateralTokenAmountAfterFee);
+        transferFeeCollateral(collateralContract, feeAmount);
+
+        //Mint argencoin
+        argencoinContract.mint(msg.sender, argcAmount);
+    }
+
+    function transferArgencoinCollateral(IERC20 collateralContract, uint256 collateralTokenAmountAfterFee) internal {
         uint256 centralBankBalanceBeforeTransfer = collateralContract.balanceOf(address(this));
 
         collateralContract.safeTransferFrom(msg.sender, address(this), collateralTokenAmountAfterFee);
 
         require(collateralContract.balanceOf(address(this)) == centralBankBalanceBeforeTransfer + collateralTokenAmountAfterFee, "Collateral transfer was not done");
+    }
 
-        //Transfer fee
+    function transferFeeCollateral(IERC20 collateralContract, uint256 feeAmount) internal {
         uint256 stakingBalanceBeforeTransfer = collateralContract.balanceOf(address(stakingContract));
 
         collateralContract.safeTransferFrom(msg.sender, address(stakingContract), feeAmount);
 
         require(collateralContract.balanceOf(address(stakingContract)) == stakingBalanceBeforeTransfer + feeAmount, "Fee collateral transfer was not done");
-
-        //Mint argencoin
-        argencoinContract.mint(msg.sender, argcAmount);
     }
 }
