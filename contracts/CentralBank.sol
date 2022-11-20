@@ -42,13 +42,13 @@ contract CentralBank is Ownable {
         uint32 _liquidationBasicPoints,
         uint16 _mintingFeeBasicPoints
     ) {
-        _transferOwnership(ownerAddress);
-
         argencoinContract = Argencoin(_argencoinAddress);
         ratesContract = RatesOracle(_ratesOracleAddress);
 
         setCollateralPercentages(_collateralBasicPoints, _liquidationBasicPoints);
         setMintingFee(_mintingFeeBasicPoints);
+        
+        _transferOwnership(ownerAddress);
     }
 
     /**
