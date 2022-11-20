@@ -5,6 +5,8 @@ import { CentralBank, Argencoin, RatesOracle, Dai } from '../typechain-types';
 
 describe('CentralBank', async function () {
   const [argcAdmin, centralBankOwner, daiOwner, strange, minter] = await ethers.getSigners();
+  const DEFAULT_COLLATERAL_PERCENTAGE = 150 * 100;
+  const DEFAULT_LIQUIDATION_PERCENTAGE = 125 * 100;
   const DEFAULT_MINTING_FEE = 100;
 
   let centralBankContract: CentralBank;
@@ -14,7 +16,15 @@ describe('CentralBank', async function () {
 
   beforeEach(async () => {
     async function deployCentralBankContract() {
-      return await (await ethers.getContractFactory('CentralBank')).deploy(centralBankOwner.address, argencoinContract.address, ratesOracleContract.address, DEFAULT_MINTING_FEE);
+      return await (await ethers.getContractFactory('CentralBank'))
+        .deploy(
+          centralBankOwner.address,
+          argencoinContract.address,
+          ratesOracleContract.address,
+          DEFAULT_COLLATERAL_PERCENTAGE,
+          DEFAULT_LIQUIDATION_PERCENTAGE,
+          DEFAULT_MINTING_FEE
+        );
     }
 
     async function deployArgencoinContract() {
@@ -133,7 +143,6 @@ describe('CentralBank', async function () {
   describe('getMaxArgcAllowed using DAI as collateral', () => {
     beforeEach(async () => {
       await ratesOracleContract.connect(centralBankOwner).setMockedRate(ethers.utils.parseUnits('300'));
-      await centralBankContract.connect(centralBankOwner).setCollateralPercentages(150 * 100, 125 * 100);
       await centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address);
     })
 
@@ -145,7 +154,6 @@ describe('CentralBank', async function () {
   describe('mintArgencoin using DAI as collateral', () => {
     beforeEach(async () => {
       await ratesOracleContract.connect(centralBankOwner).setMockedRate(ethers.utils.parseUnits('300'));
-      await centralBankContract.connect(centralBankOwner).setCollateralPercentages(150 * 100, 125 * 100);
       await centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address);
     })
 
@@ -209,16 +217,16 @@ describe('CentralBank', async function () {
 
     it('Should set collateral percentage', async () => {
       centralBankContract = centralBankContract.connect(centralBankOwner);
-      await centralBankContract.setCollateralPercentages(15000, 12500);
+      await centralBankContract.setCollateralPercentages(20000, 17500);
 
-      expect(await centralBankContract.getCollateralBasicPoints()).to.be.eq(15000);
+      expect(await centralBankContract.getCollateralBasicPoints()).to.be.eq(20000);
     })
 
     it('Should set liquidation percentage', async () => {
       centralBankContract = centralBankContract.connect(centralBankOwner);
-      await centralBankContract.setCollateralPercentages(20000, 12500);
+      await centralBankContract.setCollateralPercentages(20000, 17500);
 
-      expect(await centralBankContract.getLiquidationBasicPoints()).to.be.eq(12500);
+      expect(await centralBankContract.getLiquidationBasicPoints()).to.be.eq(17500);
     })
   });
 });

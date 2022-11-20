@@ -33,14 +33,22 @@ contract CentralBank is Ownable {
 
     uint16 private constant ONE_HUNDRED_BASIC_POINTS = 10000;
     uint64 private constant ONE_COLLATERAL_TOKEN_UNIT = 10**18;
-
-
-    constructor(address ownerAddress, address _argencoinAddress, address _ratesOracleAddress, uint16 _mintingFeeBasicPoints) {
+    
+    constructor(
+        address ownerAddress,
+        address _argencoinAddress,
+        address _ratesOracleAddress,
+        uint32 _collateralBasicPoints,
+        uint32 _liquidationBasicPoints,
+        uint16 _mintingFeeBasicPoints
+    ) {
         _transferOwnership(ownerAddress);
 
         argencoinContract = Argencoin(_argencoinAddress);
         ratesContract = RatesOracle(_ratesOracleAddress);
-        mintingFeeBasicPoints = _mintingFeeBasicPoints;
+
+        setCollateralPercentages(_collateralBasicPoints, _liquidationBasicPoints);
+        setMintingFee(_mintingFeeBasicPoints);
     }
 
     /**
