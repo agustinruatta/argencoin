@@ -60,4 +60,10 @@ describe('Staking', function () {
       expect(await stakingContract.rewardTokenContracts('dai')).to.be.eq(daiContract.address);
     });
   });
+
+  describe('lastApplicableRewardTime', () => {
+    it('returns finishAt because is the minimum', async () => {
+      expect(await stakingContract.lastApplicableRewardTime()).to.be.eq(0);
+    });
+  });
 });
