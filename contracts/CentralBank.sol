@@ -162,4 +162,12 @@ contract CentralBank is Ownable {
 
         require(collateralContract.balanceOf(address(stakingContract)) == stakingBalanceBeforeTransfer + feeAmount, "Fee collateral transfer was not done");
     }
+
+    function burnArgencoin(string memory collateralTokenSymbol) public {
+        //TODO
+    }
+
+    function liquidatePosition(address positionOwner, string memory collateralTokenSymbol) public {
+        //TODO
+    }
 }
