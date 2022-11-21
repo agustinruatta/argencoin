@@ -135,7 +135,7 @@ contract CentralBank is Ownable {
         require(getMaxArgcAllowed(collateralTokenSymbol, collateralTokenAmount) >= argcAmount, "Not enough collateral");
 
         //Calculate collateral and fee amounts
-        uint256 feeAmount = (collateralTokenAmount * mintingFeeBasicPoints) / ONE_HUNDRED_BASIC_POINTS;
+        uint256 feeAmount = calculateFeeAmount(collateralTokenSymbol, argcAmount);
         uint256 collateralTokenAmountAfterFee = collateralTokenAmount - feeAmount;
 
         transferArgencoinCollateral(collateralContract, collateralTokenAmountAfterFee);

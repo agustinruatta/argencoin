@@ -209,16 +209,16 @@ describe('CentralBank', async function () {
       await daiContract.connect(minter).approve(centralBankContract.address, ethers.utils.parseUnits('20'));
 
       //Mint argencoin
-      await centralBankContract.connect(minter).mintArgencoin(ethers.utils.parseUnits('2000'), 'dai', ethers.utils.parseUnits('15'))
+      await centralBankContract.connect(minter).mintArgencoin(ethers.utils.parseUnits('1980'), 'dai', ethers.utils.parseUnits('15'))
       
       //Check collateral was transfered
-      expect(await daiContract.balanceOf(centralBankContract.address)).to.be.eq(ethers.utils.parseUnits('14.85'));
+      expect(await daiContract.balanceOf(centralBankContract.address)).to.be.eq(ethers.utils.parseUnits('14.9'));
 
       //Check fee was transfered
-      expect(await daiContract.balanceOf(stakingContract.address)).to.be.eq(ethers.utils.parseUnits('0.15'));
+      expect(await daiContract.balanceOf(stakingContract.address)).to.be.eq(ethers.utils.parseUnits('0.1'));
 
       //Check argencoin were minted
-      expect(await argencoinContract.balanceOf(minter.address)).to.be.eq(ethers.utils.parseUnits('2000'));
+      expect(await argencoinContract.balanceOf(minter.address)).to.be.eq(ethers.utils.parseUnits('1980'));
 
     });
   });
