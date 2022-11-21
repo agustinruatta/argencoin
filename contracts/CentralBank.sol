@@ -151,7 +151,7 @@ contract CentralBank is Ownable {
         positions[msg.sender][collateralTokenSymbol] = Position(
             argcAmount,
             collateralTokenAmountAfterFee,
-            calculateLiquidationPriceLimit(ratesContract.getArgencoinRate(collateralTokenSymbol), collateralBasicPoints, liquidationBasicPoints)
+            calculateLiquidationPriceLimit(argcAmount, liquidationBasicPoints, collateralTokenAmountAfterFee)
         );
 
         //Mint argencoin
@@ -192,8 +192,8 @@ contract CentralBank is Ownable {
         collateralContract.safeTransfer(msg.sender, collateralAmount);
     }
 
-    function calculateLiquidationPriceLimit(uint256 argencoinCollateralPeg, uint256 _collateralBasicPoints, uint256 _liquidationBasicPoints) public pure returns (uint256) {
-        return (argencoinCollateralPeg * ONE_HUNDRED_BASIC_POINTS * _liquidationBasicPoints) / (_collateralBasicPoints * ONE_HUNDRED_BASIC_POINTS);
+    function calculateLiquidationPriceLimit(uint256 mintedArgencoinsAmount, uint256 _liquidationBasicPoints, uint256 collateralTokensAmount) public pure returns (uint256) {
+        return (mintedArgencoinsAmount * ONE_COLLATERAL_TOKEN_UNIT * _liquidationBasicPoints) / (collateralTokensAmount * ONE_HUNDRED_BASIC_POINTS);
     }
 
     function liquidatePosition(address positionOwner, string memory collateralTokenSymbol) public {

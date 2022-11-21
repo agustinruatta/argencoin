@@ -217,10 +217,10 @@ describe('CentralBank', async function () {
       await daiContract.connect(minter).approve(centralBankContract.address, ethers.utils.parseUnits('20'));
 
       //Mint argencoin
-      await centralBankContract.connect(minter).mintArgencoin(ethers.utils.parseUnits('1980'), 'dai', ethers.utils.parseUnits('15'))
+      await centralBankContract.connect(minter).mintArgencoin(ethers.utils.parseUnits('1980'), 'dai', ethers.utils.parseUnits('20'))
       
       //Check collateral was transfered
-      expect(await daiContract.balanceOf(centralBankContract.address)).to.be.eq(ethers.utils.parseUnits('14.9'));
+      expect(await daiContract.balanceOf(centralBankContract.address)).to.be.eq(ethers.utils.parseUnits('19.9'));
 
       //Check fee was transfered
       expect(await daiContract.balanceOf(stakingContract.address)).to.be.eq(ethers.utils.parseUnits('0.1'));
@@ -230,9 +230,9 @@ describe('CentralBank', async function () {
 
       //Check position
       let position = await centralBankContract.getPosition(minter.address, 'dai');
-      expect(position.collateralAmount).to.be.eq(ethers.utils.parseUnits('14.9'));
+      expect(position.collateralAmount).to.be.eq(ethers.utils.parseUnits('19.9'));
       expect(position.mintedArgcAmount).to.be.eq(ethers.utils.parseUnits('1980'));
-      expect(position.liquidationPriceLimit).to.be.eq(ethers.utils.parseUnits('250'));
+      expect(position.liquidationPriceLimit).to.be.eq(ethers.utils.parseUnits("24750").div("199"));
     });
   });
 
@@ -283,9 +283,14 @@ describe('CentralBank', async function () {
   })
 
   describe('calculateLiquidationPriceLimit', () => {
-    it('calculates it', async () => {
-      expect(await centralBankContract.calculateLiquidationPriceLimit(ethers.utils.parseUnits('300'), DEFAULT_COLLATERAL_PERCENTAGE, DEFAULT_LIQUIDATION_PERCENTAGE))
+    it('calculates it when it is not very overcollateralized', async () => {
+      expect(await centralBankContract.calculateLiquidationPriceLimit(ethers.utils.parseUnits('2000'), DEFAULT_LIQUIDATION_PERCENTAGE, ethers.utils.parseUnits('10')))
         .to.be.eq(ethers.utils.parseUnits('250'));
+    });
+
+    it('calculates it when it is very overcollateralized', async () => {
+      expect(await centralBankContract.calculateLiquidationPriceLimit(ethers.utils.parseUnits('2000'), DEFAULT_LIQUIDATION_PERCENTAGE, ethers.utils.parseUnits('40')))
+        .to.be.eq(ethers.utils.parseUnits('62.5'));
     });
   });
 
@@ -298,6 +303,8 @@ describe('CentralBank', async function () {
       await daiContract.connect(minter).approve(centralBankContract.address, ethers.utils.parseUnits('20'));
 
       await centralBankContract.connect(minter).mintArgencoin(ethers.utils.parseUnits('1980'), 'dai', ethers.utils.parseUnits('15'))
+
+      argencoinContract.connect(argcAdmin).mint(strange.address, ethers.utils.parseUnits('1980'));
     })
 
     it('No position were found', async () => {
@@ -305,7 +312,24 @@ describe('CentralBank', async function () {
     });
 
     it('raise an error if position is not under liquidation value', async () => {
+      await ratesOracleContract.connect(centralBankOwner).setMockedRate(ethers.utils.parseUnits('250'));
       await expect(centralBankContract.connect(strange).liquidatePosition(minter.address, 'dai')).to.be.revertedWith('Position is not under liquidation value');
+    });
+
+    it('liquidates position', async () => {
+      //Prepare test
+      await ratesOracleContract.connect(centralBankOwner).setMockedRate(ethers.utils.parseUnits('240'));
+      await argencoinContract.approve(centralBankContract.address, ethers.utils.parseUnits('1980'));
+
+      let liquidatorDaiBalanceBeforeLiquidation = await daiContract.balanceOf(strange.address);
+      let liquidatorArgencoinBalanceBeforeLiquidation = await argencoinContract.balanceOf(strange.address);
+      let argencoinBalanceBeforeLiquidation = argencoinContract.totalSupply();
+
+      //Liquidate position
+      await centralBankContract.liquidatePosition(minter.address, 'dai');
+
+      //Assert
+      //expect(await daiContract.balanceOf(strange.address), liquidatorDaiBalanceBeforeLiquidation.add())
     });
   });
 
