@@ -181,7 +181,17 @@ describe('CentralBank', async function () {
     });
 
     it('Should not allow mint unknown collateral token', async () => {
-      await expect(centralBankContract.connect(minter).mintArgencoin(ethers.utils.parseUnits('2000'), 'unk', 10)).to.be.revertedWith('Unkwnown collateral token.')
+      await expect(centralBankContract.connect(minter).mintArgencoin(ethers.utils.parseUnits('2000'), 'unk', 10))
+        .to.be.revertedWith('Unkwnown collateral token.')
+    });
+
+    it('should not allow if user has a previous minted position', async () => {
+      await daiContract.connect(daiOwner).mint(minter.address, ethers.utils.parseUnits('20'));
+      await daiContract.connect(minter).approve(centralBankContract.address, ethers.utils.parseUnits('20'));
+      await centralBankContract.connect(minter).mintArgencoin(ethers.utils.parseUnits('1'), 'dai', ethers.utils.parseUnits('1'))
+
+      await expect(centralBankContract.connect(minter).mintArgencoin(ethers.utils.parseUnits('1'), 'dai', ethers.utils.parseUnits('1')))
+        .to.be.revertedWith('You have a previous minted position. Burn it.');
     });
 
     it('Should not allow if is not enough collateral', async () => {
