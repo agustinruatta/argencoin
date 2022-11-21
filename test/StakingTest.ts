@@ -48,4 +48,10 @@ describe('Staking', function () {
         expect(await stakingContract.argencoinToken()).to.be.eq(argencoinContract.address);
     });
   });
+
+  describe('addRewardToken', () => {
+    it('raise an error if is not owner', async () => {
+      await expect(stakingContract.connect(strange).addRewardToken('dai', daiContract.address)).to.be.revertedWith('Ownable: caller is not the owner');
+    });
+  });
 });

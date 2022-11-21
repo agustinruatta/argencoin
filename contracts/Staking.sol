@@ -18,4 +18,8 @@ contract Staking is Ownable {
 
         _transferOwnership(stakingOwner);
     }
+
+    function addRewardToken(string memory tokenSymbol, address erc20Contract) external onlyOwner {
+
+    }
 }
