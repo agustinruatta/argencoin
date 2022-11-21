@@ -358,14 +358,18 @@ describe('CentralBank', async function () {
       //Liquidate position
       await centralBankContract.connect(strange).liquidatePosition(minter.address, 'dai');
 
+      //Check position were removed
+      let position = await centralBankContract.getPosition(minter.address, 'dai');
+      expect(position.collateralAmount).to.be.eq(0);
+      expect(position.mintedArgcAmount).to.be.eq(0);
+      expect(position.liquidationPriceLimit).to.be.eq(0);
+
       //Check argencoins were burned
       expect(await argencoinContract.balanceOf(strange.address)).to.be.eq((await liquidatorArgencoinBalanceBeforeLiquidation).sub(ethers.utils.parseUnits('1980')));
       expect(await argencoinContract.totalSupply()).to.be.eq((await argencoinBalanceBeforeLiquidation).sub(ethers.utils.parseUnits('1980')));
 
       //Check dai was given
-      //expect(await daiContract.balanceOf(strange.address)).to.be.eq(liquidatorDaiBalanceBeforeLiquidation.add(ethers.utils.parseUnits('14.9')));
-
-      //Check position were removed
+      expect(await daiContract.balanceOf(strange.address)).to.be.eq(liquidatorDaiBalanceBeforeLiquidation.add(ethers.utils.parseUnits('14.9')));
     });
   });
 

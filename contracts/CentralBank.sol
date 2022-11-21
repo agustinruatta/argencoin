@@ -197,13 +197,22 @@ contract CentralBank is Ownable {
     }
 
     function liquidatePosition(address positionOwner, string memory collateralTokenSymbol) public {
+        //Check if position exists
         Position memory position = positions[positionOwner][collateralTokenSymbol];
         require(position.mintedArgcAmount > 0, "Position not found"); 
 
+        //Check if position can be liquidated
         uint256 argencoinCollateralRate = ratesContract.getArgencoinRate(collateralTokenSymbol);
         require(argencoinCollateralRate < position.liquidationPriceLimit, "Position is not under liquidation value");
 
+        //Delete position
+        delete positions[positionOwner][collateralTokenSymbol];
+
+        //Burn argencoins
         argencoinContract.safeTransferFrom(msg.sender, address(this), position.mintedArgcAmount);
         argencoinContract.burn(position.mintedArgcAmount);
+
+        //Give DAI
+        getCollateralTokenAddress(collateralTokenSymbol).safeTransfer(msg.sender, position.collateralAmount);
     }
 }
