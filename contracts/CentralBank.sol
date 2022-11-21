@@ -117,6 +117,10 @@ contract CentralBank is Ownable {
         return (((collateralTokenAmount - feeAmount) * argcCollateralPeg * ONE_HUNDRED_BASIC_POINTS) / (getCollateralBasicPoints())) / ONE_COLLATERAL_TOKEN_UNIT;
     }
 
+    function calculateFeeAmount(string memory collateralTokenSymbol, uint256 argencoinAmount) public view returns (uint256) {
+        return 0;
+    }
+
     function mintArgencoin(uint256 argcAmount, string memory collateralTokenSymbol, uint256 collateralTokenAmount) public {
         IERC20 collateralContract = getCollateralTokenAddress(collateralTokenSymbol);
 

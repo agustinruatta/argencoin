@@ -158,6 +158,17 @@ describe('CentralBank', async function () {
     })
   })
 
+  describe('calculateFeeAmount using DAI as collateral', () => {
+    beforeEach(async () => {
+      await ratesOracleContract.connect(centralBankOwner).setMockedRate(ethers.utils.parseUnits('300'));
+      await centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address);
+    })
+
+    it('calculates it', async () => {
+      expect(await centralBankContract.calculateFeeAmount('dai', ethers.utils.parseUnits('1980'))).to.be.eq(ethers.utils.parseUnits('0.1'));
+    })
+  })
+
   describe('mintArgencoin using DAI as collateral', () => {
     beforeEach(async () => {
       await ratesOracleContract.connect(centralBankOwner).setMockedRate(ethers.utils.parseUnits('300'));
