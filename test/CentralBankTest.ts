@@ -4,7 +4,7 @@ import { ethers } from 'hardhat';
 import { CentralBank, Argencoin, RatesOracle, Dai, Staking } from '../typechain-types';
 
 describe('CentralBank', async function () {
-  const [argcAdmin, centralBankOwner, daiOwner, strange, minter, stakingOwner] = await ethers.getSigners();
+  const [argcAdmin, centralBankOwner, daiOwner, strange, minter, stakingOwner, strange2] = await ethers.getSigners();
   const DEFAULT_COLLATERAL_PERCENTAGE = 150 * 100;
   const DEFAULT_LIQUIDATION_PERCENTAGE = 125 * 100;
   const DEFAULT_MINTING_FEE = 100;
@@ -300,8 +300,12 @@ describe('CentralBank', async function () {
       await centralBankContract.connect(minter).mintArgencoin(ethers.utils.parseUnits('1980'), 'dai', ethers.utils.parseUnits('15'))
     })
 
-    it('raise an error if position is not under liquidation value', () => {
-      //TODO
+    it('No position were found', async () => {
+      await expect(centralBankContract.connect(strange).liquidatePosition(strange2.address, 'dai')).to.be.revertedWith('Position not found');
+    });
+
+    it('raise an error if position is not under liquidation value', async () => {
+      await expect(centralBankContract.connect(strange).liquidatePosition(minter.address, 'dai')).to.be.revertedWith('Position is not under liquidation value');
     });
   });
 
