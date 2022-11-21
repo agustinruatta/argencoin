@@ -17,6 +17,7 @@ contract CentralBank is Ownable {
     struct Position {
         uint256 mintedArgcAmount;
         uint256 collateralAmount;
+        uint256 liquidationPriceLimit;
     }
 
     // addres => token => position
@@ -145,7 +146,11 @@ contract CentralBank is Ownable {
         transferArgencoinCollateral(collateralContract, collateralTokenAmountAfterFee);
         transferFeeCollateral(collateralContract, feeAmount);
 
-        positions[msg.sender][collateralTokenSymbol] = Position(argcAmount, collateralTokenAmountAfterFee);
+        positions[msg.sender][collateralTokenSymbol] = Position(
+            argcAmount,
+            collateralTokenAmountAfterFee,
+            calculateLiquidationPriceLimit(ratesContract.getArgencoinRate(collateralTokenSymbol), collateralBasicPoints, liquidationBasicPoints)
+        );
 
         //Mint argencoin
         argencoinContract.mint(msg.sender, argcAmount);
@@ -174,8 +179,7 @@ contract CentralBank is Ownable {
         uint256 collateralAmount = positions[msg.sender][collateralTokenSymbol].collateralAmount;
 
         //Remove position
-        positions[msg.sender][collateralTokenSymbol].mintedArgcAmount = 0;
-        positions[msg.sender][collateralTokenSymbol].collateralAmount = 0;
+        delete positions[msg.sender][collateralTokenSymbol];
 
         //Burn Argencoins
         argencoinContract.safeTransferFrom(msg.sender, address(this), mintedArgcAmount);

@@ -229,6 +229,7 @@ describe('CentralBank', async function () {
       let position = await centralBankContract.getPosition(minter.address, 'dai');
       expect(position.collateralAmount).to.be.eq(ethers.utils.parseUnits('14.9'));
       expect(position.mintedArgcAmount).to.be.eq(ethers.utils.parseUnits('1980'));
+      expect(position.liquidationPriceLimit).to.be.eq(ethers.utils.parseUnits('250'));
     });
   });
 
@@ -268,6 +269,7 @@ describe('CentralBank', async function () {
       let position = await centralBankContract.getPosition(minter.address, 'dai');
       expect(position.collateralAmount).to.be.eq(0);
       expect(position.mintedArgcAmount).to.be.eq(0);
+      expect(position.liquidationPriceLimit).to.be.eq(0);
 
       //Check Argencoins were burned
       expect(await argencoinContract.totalSupply()).to.be.eq(totalArgcSupplyBeforeBurning.sub(ethers.utils.parseUnits('1980')));
