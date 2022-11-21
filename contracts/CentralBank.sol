@@ -143,10 +143,10 @@ contract CentralBank is Ownable {
         transferArgencoinCollateral(collateralContract, collateralTokenAmountAfterFee);
         transferFeeCollateral(collateralContract, feeAmount);
 
+        positions[msg.sender][collateralTokenSymbol] = Position(argcAmount, collateralTokenAmountAfterFee);
+
         //Mint argencoin
         argencoinContract.mint(msg.sender, argcAmount);
-
-        positions[msg.sender][collateralTokenSymbol] = Position(argcAmount, collateralTokenAmountAfterFee);
     }
 
     function transferArgencoinCollateral(IERC20 collateralContract, uint256 collateralTokenAmountAfterFee) internal {
@@ -167,6 +167,16 @@ contract CentralBank is Ownable {
 
     function burnArgencoin(string memory collateralTokenSymbol) public {
         require(positions[msg.sender][collateralTokenSymbol].mintedArgcAmount > 0, "You have not minted Argencoins with sent collateral");
+
+        //Remove position
+        positions[msg.sender][collateralTokenSymbol].mintedArgcAmount = 0;
+        positions[msg.sender][collateralTokenSymbol].collateralAmount = 0;
+
+        //Transfer Argencoins back to CentralBank
+        
+        //Burn Argencoins
+
+        //Return collateral
     }
 
     function liquidatePosition(address positionOwner, string memory collateralTokenSymbol) public {

@@ -233,8 +233,29 @@ describe('CentralBank', async function () {
   });
 
   describe('burnArgencoin using DAI as collateral', () => {
+    beforeEach(async () => {
+      await ratesOracleContract.connect(centralBankOwner).setMockedRate(ethers.utils.parseUnits('300'));
+      await centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address);
+    })
+
     it('raise an error if user has not minted before', async () => {
       await expect(centralBankContract.burnArgencoin('dai')).to.be.revertedWith('You have not minted Argencoins with sent collateral');
+    });
+
+    it('burns Argencoin', async () => {
+      //Prepare test
+      await daiContract.connect(daiOwner).mint(minter.address, ethers.utils.parseUnits('20'));
+      await daiContract.connect(minter).approve(centralBankContract.address, ethers.utils.parseUnits('20'));
+      await centralBankContract.connect(minter).mintArgencoin(ethers.utils.parseUnits('1980'), 'dai', ethers.utils.parseUnits('15'))
+      await ratesOracleContract.setMockedRate(ethers.utils.parseUnits('600'));
+
+      //Burn argencoins
+      await centralBankContract.connect(minter).burnArgencoin('dai');
+
+      //Check position was removed
+      let position = await centralBankContract.getPosition(minter.address, 'dai');
+      expect(position.collateralAmount).to.be.eq(0);
+      expect(position.mintedArgcAmount).to.be.eq(0);
     });
   })
 
