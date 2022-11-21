@@ -148,31 +148,24 @@ describe('CentralBank', async function () {
   });
 
   describe('getMaxArgcAllowed using DAI as collateral', () => {
-    beforeEach(async () => {
-      await ratesOracleContract.connect(centralBankOwner).setMockedRate(ethers.utils.parseUnits('300'));
-      await centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address);
-    })
-
     it('calculates it', async () => {
-      expect(await centralBankContract.getMaxArgcAllowed('dai', ethers.utils.parseUnits('10'))).to.be.eq(ethers.utils.parseUnits('1980'));
+      expect(await centralBankContract.getMaxArgcAllowed(ethers.utils.parseUnits('300'), ethers.utils.parseUnits('10')))
+        .to.be.eq(ethers.utils.parseUnits('1980'));
     })
   })
 
   describe('calculateFeeAmount using DAI as collateral', () => {
-    beforeEach(async () => {
-      await ratesOracleContract.connect(centralBankOwner).setMockedRate(ethers.utils.parseUnits('300'));
-      await centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address);
-    })
-
     it('calculates it with 1% fee', async () => {
       await centralBankContract.connect(centralBankOwner).setMintingFee(100);
-      expect(await centralBankContract.calculateFeeAmount('dai', ethers.utils.parseUnits('1980'))).to.be.eq(ethers.utils.parseUnits('0.1'));
+      expect(await centralBankContract.calculateFeeAmount(ethers.utils.parseUnits('300'), ethers.utils.parseUnits('1980')))
+        .to.be.eq(ethers.utils.parseUnits('0.1'));
     })
 
     it('calculates it with 10% fee', async () => {
       await centralBankContract.connect(centralBankOwner).setMintingFee(1000);
 
-      expect(await centralBankContract.calculateFeeAmount('dai', ethers.utils.parseUnits('1980'))).to.be.eq(ethers.utils.parseUnits('1.1'));
+      expect(await centralBankContract.calculateFeeAmount(ethers.utils.parseUnits('300'), ethers.utils.parseUnits('1980')))
+        .to.be.eq(ethers.utils.parseUnits('1.1'));
     })
   })
 

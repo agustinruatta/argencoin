@@ -112,21 +112,19 @@ contract CentralBank is Ownable {
         return collateralContracts[tokenSymbol];
     }
 
-    function getMaxArgcAllowed(string memory collateralTokenSymbol, uint256 collateralTokenAmount) public view returns (uint256) {
+    function getMaxArgcAllowed(uint256 argencoinCollateralRate, uint256 collateralTokenAmount) public view returns (uint256) {
         uint256 feeAmount = (collateralTokenAmount * mintingFeeBasicPoints) / ONE_HUNDRED_BASIC_POINTS;
-        uint256 argcCollateralPeg = ratesContract.getArgencoinRate(collateralTokenSymbol);
 
-        return (((collateralTokenAmount - feeAmount) * argcCollateralPeg * ONE_HUNDRED_BASIC_POINTS) / (getCollateralBasicPoints())) / ONE_COLLATERAL_TOKEN_UNIT;
+        return (((collateralTokenAmount - feeAmount) * argencoinCollateralRate * ONE_HUNDRED_BASIC_POINTS) / (getCollateralBasicPoints())) / ONE_COLLATERAL_TOKEN_UNIT;
     }
 
-    function calculateFeeAmount(string memory collateralTokenSymbol, uint256 argencoinAmount) public view returns (uint256) {
+    function calculateFeeAmount(uint256 argencoinCollateralRate, uint256 argencoinAmount) public view returns (uint256) {
         //TODO: improves this code
         //TODO: should it be off peg? collateral?
-        uint256 argcCollateralPeg = ratesContract.getArgencoinRate(collateralTokenSymbol);
 
         uint256 afterFee = (argencoinAmount * ONE_HUNDRED_BASIC_POINTS) / (ONE_HUNDRED_BASIC_POINTS - mintingFeeBasicPoints);
         uint256 afterCollateral = (afterFee * collateralBasicPoints) / ONE_HUNDRED_BASIC_POINTS;
-        uint256 toCollateral = (afterCollateral * ONE_COLLATERAL_TOKEN_UNIT) / argcCollateralPeg;
+        uint256 toCollateral = (afterCollateral * ONE_COLLATERAL_TOKEN_UNIT) / argencoinCollateralRate;
 
         return (toCollateral * mintingFeeBasicPoints) / ONE_HUNDRED_BASIC_POINTS;
     }
@@ -136,11 +134,13 @@ contract CentralBank is Ownable {
 
         IERC20 collateralContract = getCollateralTokenAddress(collateralTokenSymbol);
 
+        uint256 argencoinCollateralRate = ratesContract.getArgencoinRate(collateralTokenSymbol);
+
         //Check if collateral is enough
-        require(getMaxArgcAllowed(collateralTokenSymbol, collateralTokenAmount) >= argcAmount, "Not enough collateral");
+        require(getMaxArgcAllowed(argencoinCollateralRate, collateralTokenAmount) >= argcAmount, "Not enough collateral");
 
         //Calculate collateral and fee amounts
-        uint256 feeAmount = calculateFeeAmount(collateralTokenSymbol, argcAmount);
+        uint256 feeAmount = calculateFeeAmount(argencoinCollateralRate, argcAmount);
         uint256 collateralTokenAmountAfterFee = collateralTokenAmount - feeAmount;
 
         transferArgencoinCollateral(collateralContract, collateralTokenAmountAfterFee);
