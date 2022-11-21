@@ -4,7 +4,7 @@ import { ethers } from 'hardhat';
 import { CentralBank, Argencoin, RatesOracle, Dai, Staking } from '../typechain-types';
 
 describe('CentralBank', async function () {
-  const [argcAdmin, centralBankOwner, daiOwner, strange, minter, stakingOwner, strange2] = await ethers.getSigners();
+  const [argcAdmin, centralBankOwner, daiOwner, ratesOracleOwner, strange, minter, stakingOwner, strange2] = await ethers.getSigners();
   const DEFAULT_COLLATERAL_PERCENTAGE = 150 * 100;
   const DEFAULT_LIQUIDATION_PERCENTAGE = 125 * 100;
   const DEFAULT_MINTING_FEE = 100;
@@ -34,7 +34,7 @@ describe('CentralBank', async function () {
     }
 
     async function deployRatesOracleContract() {
-      return await (await ethers.getContractFactory('RatesOracle')).deploy();
+      return await (await ethers.getContractFactory('RatesOracle')).connect(ratesOracleOwner).deploy();
     }
 
     async function deployDaiContract() {
@@ -168,7 +168,7 @@ describe('CentralBank', async function () {
 
   describe('mintArgencoin using DAI as collateral', () => {
     beforeEach(async () => {
-      await ratesOracleContract.connect(centralBankOwner).setMockedRate(ethers.utils.parseUnits('300'));
+      await ratesOracleContract.connect(ratesOracleOwner).setArgencoinRate('dai', ethers.utils.parseUnits('300'));
       await centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address);
     })
 
@@ -259,7 +259,7 @@ describe('CentralBank', async function () {
 
   describe('burnArgencoin using DAI as collateral', () => {
     beforeEach(async () => {
-      await ratesOracleContract.connect(centralBankOwner).setMockedRate(ethers.utils.parseUnits('300'));
+      await ratesOracleContract.connect(ratesOracleOwner).setArgencoinRate('dai', ethers.utils.parseUnits('300'));
       await centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address);
 
       await daiContract.connect(daiOwner).mint(minter.address, ethers.utils.parseUnits('20'));
@@ -280,7 +280,7 @@ describe('CentralBank', async function () {
 
     it('burns Argencoin', async () => {
       //Prepare test
-      await ratesOracleContract.setMockedRate(ethers.utils.parseUnits('600'));
+      await ratesOracleContract.connect(ratesOracleOwner).setArgencoinRate('dai', ethers.utils.parseUnits('600'));
       await argencoinContract.connect(minter).approve(centralBankContract.address, ethers.utils.parseUnits('1980'))
 
       let totalArgcSupplyBeforeBurning = await argencoinContract.totalSupply();
@@ -317,7 +317,7 @@ describe('CentralBank', async function () {
 
   describe('liquidatePosition using DAI as collateral', () => {
     beforeEach(async () => {
-      await ratesOracleContract.connect(centralBankOwner).setMockedRate(ethers.utils.parseUnits('300'));
+      await ratesOracleContract.connect(ratesOracleOwner).setArgencoinRate('dai', ethers.utils.parseUnits('300'));
       await centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address);
 
       await daiContract.connect(daiOwner).mint(minter.address, ethers.utils.parseUnits('20'));
@@ -335,12 +335,12 @@ describe('CentralBank', async function () {
     });
 
     it('raise an error if position is not under liquidation value', async () => {
-      await ratesOracleContract.connect(centralBankOwner).setMockedRate(ethers.utils.parseUnits('250'));
+      await ratesOracleContract.connect(ratesOracleOwner).setArgencoinRate('dai', ethers.utils.parseUnits('250'));
       await expect(centralBankContract.connect(strange).liquidatePosition(minter.address, 'dai')).to.be.revertedWith('Position is not under liquidation value');
     });
 
     it('raise an error if user has not approved Argencoin tranfer', async () => {
-      await ratesOracleContract.connect(centralBankOwner).setMockedRate(ethers.utils.parseUnits('165'));
+      await ratesOracleContract.connect(ratesOracleOwner).setArgencoinRate('dai', ethers.utils.parseUnits('165'));
 
       await expect(centralBankContract.connect(strange).liquidatePosition(minter.address, 'dai'))
         .to.be.revertedWith('ERC20: insufficient allowance');
@@ -348,7 +348,7 @@ describe('CentralBank', async function () {
 
     it('liquidates position', async () => {
       //Prepare test
-      await ratesOracleContract.connect(centralBankOwner).setMockedRate(ethers.utils.parseUnits('165'));
+      await ratesOracleContract.connect(ratesOracleOwner).setArgencoinRate('dai', ethers.utils.parseUnits('165'));
       let a = await argencoinContract.connect(strange).approve(centralBankContract.address, ethers.utils.parseUnits('1980'));
 
       let liquidatorDaiBalanceBeforeLiquidation = await daiContract.balanceOf(strange.address);
