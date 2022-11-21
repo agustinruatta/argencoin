@@ -164,8 +164,15 @@ describe('CentralBank', async function () {
       await centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address);
     })
 
-    it('calculates it', async () => {
+    it('calculates it with 1% fee', async () => {
+      await centralBankContract.connect(centralBankOwner).setMintingFee(100);
       expect(await centralBankContract.calculateFeeAmount('dai', ethers.utils.parseUnits('1980'))).to.be.eq(ethers.utils.parseUnits('0.1'));
+    })
+
+    it('calculates it with 10% fee', async () => {
+      await centralBankContract.connect(centralBankOwner).setMintingFee(1000);
+
+      expect(await centralBankContract.calculateFeeAmount('dai', ethers.utils.parseUnits('1980'))).to.be.eq(ethers.utils.parseUnits('1.1'));
     })
   })
 

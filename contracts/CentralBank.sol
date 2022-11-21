@@ -118,7 +118,14 @@ contract CentralBank is Ownable {
     }
 
     function calculateFeeAmount(string memory collateralTokenSymbol, uint256 argencoinAmount) public view returns (uint256) {
-        return 0;
+        //TODO: improves this code
+        uint256 argcCollateralPeg = ratesContract.getArgencoinRate(collateralTokenSymbol);
+
+        uint256 afterFee = (argencoinAmount * ONE_HUNDRED_BASIC_POINTS) / (ONE_HUNDRED_BASIC_POINTS - mintingFeeBasicPoints);
+        uint256 afterCollateral = (afterFee * collateralBasicPoints) / ONE_HUNDRED_BASIC_POINTS;
+        uint256 toCollateral = (afterCollateral * ONE_COLLATERAL_TOKEN_UNIT) / argcCollateralPeg;
+
+        return (toCollateral * mintingFeeBasicPoints) / ONE_HUNDRED_BASIC_POINTS;
     }
 
     function mintArgencoin(uint256 argcAmount, string memory collateralTokenSymbol, uint256 collateralTokenAmount) public {
