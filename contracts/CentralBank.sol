@@ -31,9 +31,9 @@ contract CentralBank is Ownable {
 
     uint16 private mintingFeeBasicPoints;
 
-    Argencoin private argencoinContract;
-    RatesOracle private ratesContract;
-    Staking private stakingContract;
+    Argencoin private immutable argencoinContract;
+    RatesOracle private immutable ratesContract;
+    Staking private immutable stakingContract;
 
     uint16 private constant ONE_HUNDRED_BASIC_POINTS = 10000;
     uint64 private constant ONE_COLLATERAL_TOKEN_UNIT = 10**18;
