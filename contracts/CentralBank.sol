@@ -186,6 +186,10 @@ contract CentralBank is Ownable {
         collateralContract.safeTransfer(msg.sender, collateralAmount);
     }
 
+    function calculateLiquidationPriceLimit(uint256 argencoinCollateralPeg, uint256 _collateralBasicPoints, uint256 _liquidationBasicPoints) public pure returns (uint256) {
+        return (argencoinCollateralPeg * ONE_HUNDRED_BASIC_POINTS * _liquidationBasicPoints) / (_collateralBasicPoints * ONE_HUNDRED_BASIC_POINTS);
+    }
+
     function liquidatePosition(address positionOwner, string memory collateralTokenSymbol) public {
         //TODO
     }

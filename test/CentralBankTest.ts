@@ -277,6 +277,29 @@ describe('CentralBank', async function () {
     });
   })
 
+  describe('calculateLiquidationPriceLimit', () => {
+    it('calculates it', async () => {
+      expect(await centralBankContract.calculateLiquidationPriceLimit(ethers.utils.parseUnits('300'), DEFAULT_COLLATERAL_PERCENTAGE, DEFAULT_LIQUIDATION_PERCENTAGE))
+        .to.be.eq(ethers.utils.parseUnits('250'));
+    });
+  });
+
+  describe('liquidatePosition using DAI as collateral', () => {
+    beforeEach(async () => {
+      await ratesOracleContract.connect(centralBankOwner).setMockedRate(ethers.utils.parseUnits('300'));
+      await centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address);
+
+      await daiContract.connect(daiOwner).mint(minter.address, ethers.utils.parseUnits('20'));
+      await daiContract.connect(minter).approve(centralBankContract.address, ethers.utils.parseUnits('20'));
+
+      await centralBankContract.connect(minter).mintArgencoin(ethers.utils.parseUnits('1980'), 'dai', ethers.utils.parseUnits('15'))
+    })
+
+    it('raise an error if position is not under liquidation value', () => {
+      //TODO
+    });
+  });
+
   describe('setCollateralPercentages', () => {
     it('Should not allow if is not owner', async () => {
       await expect(centralBankContract.setCollateralPercentages(15000, 12500)).to.be.revertedWith('Ownable: caller is not the owner');
