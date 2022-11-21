@@ -93,14 +93,14 @@ contract CentralBank is Ownable {
         return positions[userAddress][token];
     }
 
-    function addNewCollateralToken(string memory tokenSymbol, address erc20Contract) public onlyOwner {
+    function addNewCollateralToken(string memory tokenSymbol, address erc20Contract) external onlyOwner {
         //TODO: ask for RatesOracle defintion
         require(address(collateralContracts[tokenSymbol]) == address(0), "Token is already set. Please, call 'editColleteralToken' function.");
 
         collateralContracts[tokenSymbol] = IERC20(erc20Contract);
     }
 
-    function editCollateralToken(string memory tokenSymbol, address erc20Contract) public onlyOwner {
+    function editCollateralToken(string memory tokenSymbol, address erc20Contract) external onlyOwner {
         require(address(collateralContracts[tokenSymbol]) != address(0), "Token is not set yet. Please, call 'addNewColleteralToken' function.");
 
         collateralContracts[tokenSymbol] = IERC20(erc20Contract);
@@ -129,7 +129,7 @@ contract CentralBank is Ownable {
         return (toCollateral * mintingFeeBasicPoints) / ONE_HUNDRED_BASIC_POINTS;
     }
 
-    function mintArgencoin(uint256 argcAmount, string memory collateralTokenSymbol, uint256 collateralTokenAmount) public {
+    function mintArgencoin(uint256 argcAmount, string memory collateralTokenSymbol, uint256 collateralTokenAmount) external {
         require(argcAmount >= ONE_COLLATERAL_TOKEN_UNIT, "You must mint at least 1 Argencoin");
         require(positions[msg.sender][collateralTokenSymbol].mintedArgcAmount == 0, "You have a previous minted position. Burn it.");
 
@@ -174,7 +174,7 @@ contract CentralBank is Ownable {
         require(collateralContract.balanceOf(address(stakingContract)) == stakingBalanceBeforeTransfer + feeAmount, "Fee collateral transfer was not done");
     }
 
-    function burnArgencoin(string memory collateralTokenSymbol) public {
+    function burnArgencoin(string memory collateralTokenSymbol) external {
         require(positions[msg.sender][collateralTokenSymbol].mintedArgcAmount > 0, "You have not minted Argencoins with sent collateral");
 
         uint256 mintedArgcAmount = positions[msg.sender][collateralTokenSymbol].mintedArgcAmount;
@@ -196,7 +196,7 @@ contract CentralBank is Ownable {
         return (mintedArgencoinsAmount * ONE_COLLATERAL_TOKEN_UNIT * _liquidationBasicPoints) / (collateralTokensAmount * ONE_HUNDRED_BASIC_POINTS);
     }
 
-    function liquidatePosition(address positionOwner, string memory collateralTokenSymbol) public {
+    function liquidatePosition(address positionOwner, string memory collateralTokenSymbol) external {
         //Check if position exists
         Position memory position = positions[positionOwner][collateralTokenSymbol];
         require(position.mintedArgcAmount > 0, "Position not found"); 
