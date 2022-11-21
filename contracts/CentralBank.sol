@@ -181,7 +181,8 @@ contract CentralBank is Ownable {
         argencoinContract.burn(mintedArgcAmount);
 
         //Return collateral
-        //IERC20 collateralContract = getCollateralTokenAddress(collateralTokenSymbol);
+        IERC20 collateralContract = getCollateralTokenAddress(collateralTokenSymbol);
+        collateralContract.safeTransfer(msg.sender, collateralAmount);
     }
 
     function liquidatePosition(address positionOwner, string memory collateralTokenSymbol) public {

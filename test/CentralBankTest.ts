@@ -259,6 +259,7 @@ describe('CentralBank', async function () {
       await argencoinContract.connect(minter).approve(centralBankContract.address, ethers.utils.parseUnits('1980'))
 
       let totalArgcSupplyBeforeBurning = await argencoinContract.totalSupply();
+      let totalMintedDaiBeforeBurning = await daiContract.balanceOf(minter.address);
 
       //Burn argencoins
       await centralBankContract.connect(minter).burnArgencoin('dai');
@@ -270,6 +271,9 @@ describe('CentralBank', async function () {
 
       //Check Argencoins were burned
       expect(await argencoinContract.totalSupply()).to.be.eq(totalArgcSupplyBeforeBurning.sub(ethers.utils.parseUnits('1980')));
+
+      //Check collateral amount was returned
+      expect(await daiContract.balanceOf(minter.address)).to.be.eq(totalMintedDaiBeforeBurning.add(ethers.utils.parseUnits('14.9')));
     });
   })
 
