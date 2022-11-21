@@ -211,7 +211,7 @@ describe('CentralBank', async function () {
         .to.be.revertedWith('Dai/insufficient-balance');
     });
 
-    it('mints Argencoin', async () => {
+    it('mints Argencoin with very overcollateralized position', async () => {
       //Prepare test
       await daiContract.connect(daiOwner).mint(minter.address, ethers.utils.parseUnits('20'));
       await daiContract.connect(minter).approve(centralBankContract.address, ethers.utils.parseUnits('20'));
@@ -233,6 +233,30 @@ describe('CentralBank', async function () {
       expect(position.collateralAmount).to.be.eq(ethers.utils.parseUnits('19.9'));
       expect(position.mintedArgcAmount).to.be.eq(ethers.utils.parseUnits('1980'));
       expect(position.liquidationPriceLimit).to.be.eq(ethers.utils.parseUnits("24750").div("199"));
+    });
+
+    it('mints Argencoin with no very overcollateralized position', async () => {
+      //Prepare test
+      await daiContract.connect(daiOwner).mint(minter.address, ethers.utils.parseUnits('20'));
+      await daiContract.connect(minter).approve(centralBankContract.address, ethers.utils.parseUnits('20'));
+
+      //Mint argencoin
+      await centralBankContract.connect(minter).mintArgencoin(ethers.utils.parseUnits('1980'), 'dai', ethers.utils.parseUnits('10'))
+      
+      //Check collateral was transfered
+      expect(await daiContract.balanceOf(centralBankContract.address)).to.be.eq(ethers.utils.parseUnits('9.9'));
+
+      //Check fee was transfered
+      expect(await daiContract.balanceOf(stakingContract.address)).to.be.eq(ethers.utils.parseUnits('0.1'));
+
+      //Check argencoin were minted
+      expect(await argencoinContract.balanceOf(minter.address)).to.be.eq(ethers.utils.parseUnits('1980'));
+
+      //Check position
+      let position = await centralBankContract.getPosition(minter.address, 'dai');
+      expect(position.collateralAmount).to.be.eq(ethers.utils.parseUnits('9.9'));
+      expect(position.mintedArgcAmount).to.be.eq(ethers.utils.parseUnits('1980'));
+      expect(position.liquidationPriceLimit).to.be.eq(ethers.utils.parseUnits("250"));
     });
   });
 
