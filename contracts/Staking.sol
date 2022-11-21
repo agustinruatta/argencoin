@@ -11,5 +11,11 @@ using SafeERC20 for Argencoin;
 
 /// @custom:security-contact agustinruatta@gmail.com
 contract Staking is Ownable {
-    constructor() { }
+    Argencoin public immutable argencoinToken;
+
+    constructor(address stakingOwner, address argencoinAddress) {
+        argencoinToken = Argencoin(argencoinAddress);
+
+        _transferOwnership(stakingOwner);
+    }
 }
