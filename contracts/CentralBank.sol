@@ -120,6 +120,7 @@ contract CentralBank is Ownable {
 
     function calculateFeeAmount(string memory collateralTokenSymbol, uint256 argencoinAmount) public view returns (uint256) {
         //TODO: improves this code
+        //TODO: should it be off peg? collateral?
         uint256 argcCollateralPeg = ratesContract.getArgencoinRate(collateralTokenSymbol);
 
         uint256 afterFee = (argencoinAmount * ONE_HUNDRED_BASIC_POINTS) / (ONE_HUNDRED_BASIC_POINTS - mintingFeeBasicPoints);
