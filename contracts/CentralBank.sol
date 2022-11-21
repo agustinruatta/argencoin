@@ -106,7 +106,7 @@ contract CentralBank is Ownable {
         collateralContracts[tokenSymbol] = IERC20(erc20Contract);
     }
 
-    function getCollateralTokenAddress(string memory tokenSymbol) public view returns (IERC20) {
+    function getCollateralTokenContract(string memory tokenSymbol) public view returns (IERC20) {
         require(address(collateralContracts[tokenSymbol]) != address(0), "Unkwnown collateral token.");
 
         return collateralContracts[tokenSymbol];
@@ -133,7 +133,7 @@ contract CentralBank is Ownable {
         require(argcAmount >= ONE_COLLATERAL_TOKEN_UNIT, "You must mint at least 1 Argencoin");
         require(positions[msg.sender][collateralTokenSymbol].mintedArgcAmount == 0, "You have a previous minted position. Burn it.");
 
-        IERC20 collateralContract = getCollateralTokenAddress(collateralTokenSymbol);
+        IERC20 collateralContract = getCollateralTokenContract(collateralTokenSymbol);
 
         uint256 argencoinCollateralRate = ratesContract.getArgencoinRate(collateralTokenSymbol);
 
@@ -188,7 +188,7 @@ contract CentralBank is Ownable {
         argencoinContract.burn(mintedArgcAmount);
 
         //Return collateral
-        IERC20 collateralContract = getCollateralTokenAddress(collateralTokenSymbol);
+        IERC20 collateralContract = getCollateralTokenContract(collateralTokenSymbol);
         collateralContract.safeTransfer(msg.sender, collateralAmount);
     }
 
@@ -213,6 +213,6 @@ contract CentralBank is Ownable {
         argencoinContract.burn(position.mintedArgcAmount);
 
         //Give DAI
-        getCollateralTokenAddress(collateralTokenSymbol).safeTransfer(msg.sender, position.collateralAmount);
+        getCollateralTokenContract(collateralTokenSymbol).safeTransfer(msg.sender, position.collateralAmount);
     }
 }

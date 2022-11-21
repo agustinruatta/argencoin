@@ -87,7 +87,7 @@ describe('CentralBank', async function () {
     it('Allows to add token', async () => {
       await centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address);
 
-      expect(await centralBankContract.connect(centralBankOwner).getCollateralTokenAddress('dai')).to.be.eq(daiContract.address);
+      expect(await centralBankContract.connect(centralBankOwner).getCollateralTokenContract('dai')).to.be.eq(daiContract.address);
     });
   });
 
@@ -129,13 +129,13 @@ describe('CentralBank', async function () {
 
       await centralBankContract.connect(centralBankOwner).editCollateralToken('dai', daiContract.address);
 
-      expect(await centralBankContract.connect(centralBankOwner).getCollateralTokenAddress('dai')).to.be.eq(daiContract.address);
+      expect(await centralBankContract.connect(centralBankOwner).getCollateralTokenContract('dai')).to.be.eq(daiContract.address);
     });
   });
 
-  describe('getCollateralToken', () => {
+  describe('getCollateralTokenContract', () => {
     it('Raise error if token is not set', async () =>  {
-      await expect(centralBankContract.getCollateralTokenAddress('dai')).to.be.revertedWith('Unkwnown collateral token.');
+      await expect(centralBankContract.getCollateralTokenContract('dai')).to.be.revertedWith('Unkwnown collateral token.');
     });
   });
 
