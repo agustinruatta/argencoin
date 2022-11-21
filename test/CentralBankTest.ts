@@ -220,6 +220,10 @@ describe('CentralBank', async function () {
       //Check argencoin were minted
       expect(await argencoinContract.balanceOf(minter.address)).to.be.eq(ethers.utils.parseUnits('1980'));
 
+      //Check position
+      let position = await centralBankContract.getPosition(minter.address, 'dai');
+      expect(position.collateralAmount).to.be.eq(ethers.utils.parseUnits('14.9'));
+      expect(position.mintedArgcAmount).to.be.eq(ethers.utils.parseUnits('1980'));
     });
   });
 

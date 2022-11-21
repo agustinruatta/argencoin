@@ -143,6 +143,8 @@ contract CentralBank is Ownable {
 
         //Mint argencoin
         argencoinContract.mint(msg.sender, argcAmount);
+
+        positions[msg.sender][collateralTokenSymbol] = Position(argcAmount, collateralTokenAmountAfterFee);
     }
 
     function transferArgencoinCollateral(IERC20 collateralContract, uint256 collateralTokenAmountAfterFee) internal {
