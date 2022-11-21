@@ -79,19 +79,15 @@ describe('CentralBank', async function () {
     });
 
     it('Should not allow add token again', async () => {
-      centralBankContract = centralBankContract.connect(centralBankOwner);
+      centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address);
 
-      centralBankContract.addNewCollateralToken('dai', daiContract.address);
-
-      await expect(centralBankContract.addNewCollateralToken('dai', daiContract.address)).to.be.revertedWith('Token is already set. Please, call \'editColleteralToken\' function.')
+      await expect(centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address)).to.be.revertedWith('Token is already set. Please, call \'editColleteralToken\' function.')
     });
 
     it('Allows to add token', async () => {
-      centralBankContract = centralBankContract.connect(centralBankOwner);
+      await centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address);
 
-      await centralBankContract.addNewCollateralToken('dai', daiContract.address);
-
-      expect(await centralBankContract.getCollateralTokenAddress('dai')).to.be.eq(daiContract.address);
+      expect(await centralBankContract.connect(centralBankOwner).getCollateralTokenAddress('dai')).to.be.eq(daiContract.address);
     });
   });
 
@@ -123,21 +119,17 @@ describe('CentralBank', async function () {
     });
 
     it('Should not allow edit token if is not set', async () => {
-      centralBankContract = centralBankContract.connect(centralBankOwner);
-
-      await expect(centralBankContract.editCollateralToken('dai', daiContract.address)).to.be.revertedWith('Token is not set yet. Please, call \'addNewColleteralToken\' function.')
+      await expect(centralBankContract.connect(centralBankOwner).editCollateralToken('dai', daiContract.address)).to.be.revertedWith('Token is not set yet. Please, call \'addNewColleteralToken\' function.')
     });
 
     it('Allows to edit token', async () => {
-      centralBankContract = centralBankContract.connect(centralBankOwner);
-
       const USDC_CONTRACT_ADDRESS = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
 
-      await centralBankContract.addNewCollateralToken('dai', USDC_CONTRACT_ADDRESS);
+      await centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', USDC_CONTRACT_ADDRESS);
 
-      await centralBankContract.editCollateralToken('dai', daiContract.address);
+      await centralBankContract.connect(centralBankOwner).editCollateralToken('dai', daiContract.address);
 
-      expect(await centralBankContract.getCollateralTokenAddress('dai')).to.be.eq(daiContract.address);
+      expect(await centralBankContract.connect(centralBankOwner).getCollateralTokenAddress('dai')).to.be.eq(daiContract.address);
     });
   });
 
@@ -329,11 +321,13 @@ describe('CentralBank', async function () {
       await centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address);
 
       await daiContract.connect(daiOwner).mint(minter.address, ethers.utils.parseUnits('20'));
+      await daiContract.connect(daiOwner).mint(strange.address, ethers.utils.parseUnits('20'));
+
       await daiContract.connect(minter).approve(centralBankContract.address, ethers.utils.parseUnits('20'));
+      await daiContract.connect(strange).approve(centralBankContract.address, ethers.utils.parseUnits('20'));
 
-      await centralBankContract.connect(minter).mintArgencoin(ethers.utils.parseUnits('1980'), 'dai', ethers.utils.parseUnits('15'))
-
-      argencoinContract.connect(argcAdmin).mint(strange.address, ethers.utils.parseUnits('1980'));
+      await centralBankContract.connect(minter).mintArgencoin(ethers.utils.parseUnits('1980'), 'dai', ethers.utils.parseUnits('15'));
+      await centralBankContract.connect(strange).mintArgencoin(ethers.utils.parseUnits('1980'), 'dai', ethers.utils.parseUnits('15'));
     })
 
     it('No position were found', async () => {
@@ -345,20 +339,33 @@ describe('CentralBank', async function () {
       await expect(centralBankContract.connect(strange).liquidatePosition(minter.address, 'dai')).to.be.revertedWith('Position is not under liquidation value');
     });
 
+    it('raise an error if user has not approved Argencoin tranfer', async () => {
+      await ratesOracleContract.connect(centralBankOwner).setMockedRate(ethers.utils.parseUnits('165'));
+
+      await expect(centralBankContract.connect(strange).liquidatePosition(minter.address, 'dai'))
+        .to.be.revertedWith('ERC20: insufficient allowance');
+    });
+
     it('liquidates position', async () => {
       //Prepare test
-      await ratesOracleContract.connect(centralBankOwner).setMockedRate(ethers.utils.parseUnits('240'));
-      await argencoinContract.approve(centralBankContract.address, ethers.utils.parseUnits('1980'));
+      await ratesOracleContract.connect(centralBankOwner).setMockedRate(ethers.utils.parseUnits('165'));
+      let a = await argencoinContract.connect(strange).approve(centralBankContract.address, ethers.utils.parseUnits('1980'));
 
       let liquidatorDaiBalanceBeforeLiquidation = await daiContract.balanceOf(strange.address);
       let liquidatorArgencoinBalanceBeforeLiquidation = await argencoinContract.balanceOf(strange.address);
       let argencoinBalanceBeforeLiquidation = argencoinContract.totalSupply();
 
       //Liquidate position
-      await centralBankContract.liquidatePosition(minter.address, 'dai');
+      await centralBankContract.connect(strange).liquidatePosition(minter.address, 'dai');
 
-      //Assert
-      //expect(await daiContract.balanceOf(strange.address), liquidatorDaiBalanceBeforeLiquidation.add())
+      //Check argencoins were burned
+      expect(await argencoinContract.balanceOf(strange.address)).to.be.eq((await liquidatorArgencoinBalanceBeforeLiquidation).sub(ethers.utils.parseUnits('1980')));
+      expect(await argencoinContract.totalSupply()).to.be.eq((await argencoinBalanceBeforeLiquidation).sub(ethers.utils.parseUnits('1980')));
+
+      //Check dai was given
+      //expect(await daiContract.balanceOf(strange.address)).to.be.eq(liquidatorDaiBalanceBeforeLiquidation.add(ethers.utils.parseUnits('14.9')));
+
+      //Check position were removed
     });
   });
 
@@ -368,33 +375,25 @@ describe('CentralBank', async function () {
     });
 
     it('Should not allow it if liquidation percentage is not less than collateral percentage', async () => {
-      centralBankContract = centralBankContract.connect(centralBankOwner);
-
-      await expect(centralBankContract.setCollateralPercentages(12500, 12500)).to.be.revertedWith('Collateral percentage must be greater than liquidation percentage');
+      await expect(centralBankContract.connect(centralBankOwner).setCollateralPercentages(12500, 12500)).to.be.revertedWith('Collateral percentage must be greater than liquidation percentage');
     });
 
     it('Should not allow if collateral percentage is not more than 100%', async () => {
-      centralBankContract = centralBankContract.connect(centralBankOwner);
-
-      await expect(centralBankContract.setCollateralPercentages(10000, 9900)).to.be.revertedWith('Collateral and liquidation percentages must be greater 100% (10000 basic points)');
+      await expect(centralBankContract.connect(centralBankOwner).setCollateralPercentages(10000, 9900)).to.be.revertedWith('Collateral and liquidation percentages must be greater 100% (10000 basic points)');
     })
 
     it('Should not allow if liquidation percentage is not more than 100%', async () => {
-      centralBankContract = centralBankContract.connect(centralBankOwner);
-
-      await expect(centralBankContract.setCollateralPercentages(20000, 10000)).to.be.revertedWith('Collateral and liquidation percentages must be greater 100% (10000 basic points)');
+      await expect(centralBankContract.connect(centralBankOwner).setCollateralPercentages(20000, 10000)).to.be.revertedWith('Collateral and liquidation percentages must be greater 100% (10000 basic points)');
     })
 
     it('Should set collateral percentage', async () => {
-      centralBankContract = centralBankContract.connect(centralBankOwner);
-      await centralBankContract.setCollateralPercentages(20000, 17500);
+      await centralBankContract.connect(centralBankOwner).setCollateralPercentages(20000, 17500);
 
       expect(await centralBankContract.getCollateralBasicPoints()).to.be.eq(20000);
     })
 
     it('Should set liquidation percentage', async () => {
-      centralBankContract = centralBankContract.connect(centralBankOwner);
-      await centralBankContract.setCollateralPercentages(20000, 17500);
+      await centralBankContract.connect(centralBankOwner).setCollateralPercentages(20000, 17500);
 
       expect(await centralBankContract.getLiquidationBasicPoints()).to.be.eq(17500);
     })

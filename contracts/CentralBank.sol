@@ -202,5 +202,8 @@ contract CentralBank is Ownable {
 
         uint256 argencoinCollateralRate = ratesContract.getArgencoinRate(collateralTokenSymbol);
         require(argencoinCollateralRate < position.liquidationPriceLimit, "Position is not under liquidation value");
+
+        argencoinContract.safeTransferFrom(msg.sender, address(this), position.mintedArgcAmount);
+        argencoinContract.burn(position.mintedArgcAmount);
     }
 }
