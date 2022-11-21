@@ -1,10 +1,11 @@
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { RatesOracle } from '../typechain-types';
 
-describe('RatesOracle', async function () {
-  const [owner, strange] = await ethers.getSigners();
+describe('RatesOracle', function () {
+  let [owner, strange]: SignerWithAddress[] = [];
 
   let ratesOracleContract: RatesOracle;
 
@@ -12,6 +13,8 @@ describe('RatesOracle', async function () {
     async function deployRatesOracleContract() {
       return await (await ethers.getContractFactory('RatesOracle')).deploy();
     }
+
+    [owner, strange] = await ethers.getSigners();
 
     ratesOracleContract = await loadFixture(deployRatesOracleContract);
   })

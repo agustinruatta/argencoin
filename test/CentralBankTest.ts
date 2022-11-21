@@ -1,10 +1,11 @@
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { CentralBank, Argencoin, RatesOracle, Dai, Staking } from '../typechain-types';
 
-describe('CentralBank', async function () {
-  const [argcAdmin, centralBankOwner, daiOwner, ratesOracleOwner, strange, minter, stakingOwner, strange2] = await ethers.getSigners();
+describe('CentralBank', function () {
+  let [argcAdmin, centralBankOwner, daiOwner, ratesOracleOwner, strange, minter, stakingOwner, strange2]: SignerWithAddress[] = [];;
   const DEFAULT_COLLATERAL_PERCENTAGE = 150 * 100;
   const DEFAULT_LIQUIDATION_PERCENTAGE = 125 * 100;
   const DEFAULT_MINTING_FEE = 100;
@@ -42,8 +43,10 @@ describe('CentralBank', async function () {
     }
 
     async function deployStakingContract() {
-      return await (await ethers.getContractFactory('Staking')).connect(stakingOwner).deploy();
+      return await (await ethers.getContractFactory('Staking')).connect(stakingOwner).deploy(stakingOwner.address, argencoinContract.address);
     }
+
+    [argcAdmin, centralBankOwner, daiOwner, ratesOracleOwner, strange, minter, stakingOwner, strange2] = await ethers.getSigners();
 
     argencoinContract = await loadFixture(deployArgencoinContract);
     ratesOracleContract = await loadFixture(deployRatesOracleContract);
