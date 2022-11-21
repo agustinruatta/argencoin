@@ -129,6 +129,8 @@ contract CentralBank is Ownable {
     }
 
     function mintArgencoin(uint256 argcAmount, string memory collateralTokenSymbol, uint256 collateralTokenAmount) public {
+        require(argcAmount >= ONE_COLLATERAL_TOKEN_UNIT, "You must mint at least 1 Argencoin");
+
         IERC20 collateralContract = getCollateralTokenAddress(collateralTokenSymbol);
 
         //Check if collateral is enough
@@ -164,7 +166,7 @@ contract CentralBank is Ownable {
     }
 
     function burnArgencoin(string memory collateralTokenSymbol) public {
-        //TODO
+        require(positions[msg.sender][collateralTokenSymbol].mintedArgcAmount > 0, "You have not minted Argencoins with sent collateral");
     }
 
     function liquidatePosition(address positionOwner, string memory collateralTokenSymbol) public {

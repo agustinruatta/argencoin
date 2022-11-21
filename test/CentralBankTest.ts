@@ -182,6 +182,11 @@ describe('CentralBank', async function () {
       await centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address);
     })
 
+    it('Should not allow mint less than 1 Argencoin', async () => {
+      await expect(centralBankContract.connect(minter).mintArgencoin(ethers.utils.parseUnits('1').sub(1), 'dai', ethers.utils.parseUnits('10')))
+        .to.be.revertedWith('You must mint at least 1 Argencoin');
+    });
+
     it('Should not allow mint unknown collateral token', async () => {
       await expect(centralBankContract.connect(minter).mintArgencoin(ethers.utils.parseUnits('2000'), 'unk', 10)).to.be.revertedWith('Unkwnown collateral token.')
     });
@@ -226,6 +231,12 @@ describe('CentralBank', async function () {
       expect(position.mintedArgcAmount).to.be.eq(ethers.utils.parseUnits('1980'));
     });
   });
+
+  describe('burnArgencoin using DAI as collateral', () => {
+    it('raise an error if user has not minted before', async () => {
+      await expect(centralBankContract.burnArgencoin('dai')).to.be.revertedWith('You have not minted Argencoins with sent collateral');
+    });
+  })
 
   describe('setCollateralPercentages', () => {
     it('Should not allow if is not owner', async () => {
