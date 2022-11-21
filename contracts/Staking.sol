@@ -12,6 +12,7 @@ using SafeERC20 for Argencoin;
 /// @custom:security-contact agustinruatta@gmail.com
 contract Staking is Ownable {
     Argencoin public immutable argencoinToken;
+    mapping(string => IERC20) public rewardTokenContracts;
 
     constructor(address stakingOwner, address argencoinAddress) {
         argencoinToken = Argencoin(argencoinAddress);
@@ -19,7 +20,7 @@ contract Staking is Ownable {
         _transferOwnership(stakingOwner);
     }
 
-    function addRewardToken(string memory tokenSymbol, address erc20Contract) external onlyOwner {
-
+    function addRewardToken(string memory tokenSymbol, address erc20ContractAddress) external onlyOwner {
+        rewardTokenContracts[tokenSymbol] = IERC20(erc20ContractAddress);
     }
 }
