@@ -112,7 +112,7 @@ contract CentralBank is Ownable {
         return collateralContracts[tokenSymbol];
     }
 
-    function getMaxArgcAllowed(uint256 argencoinCollateralRate, uint256 collateralTokenAmount) public view returns (uint256) {
+    function calculateMaxAllowedArgcToMint(uint256 argencoinCollateralRate, uint256 collateralTokenAmount) public view returns (uint256) {
         uint256 feeAmount = (collateralTokenAmount * mintingFeeBasicPoints) / ONE_HUNDRED_BASIC_POINTS;
 
         return (((collateralTokenAmount - feeAmount) * argencoinCollateralRate * ONE_HUNDRED_BASIC_POINTS) / (getCollateralBasicPoints())) / ONE_COLLATERAL_TOKEN_UNIT;
@@ -138,7 +138,7 @@ contract CentralBank is Ownable {
         uint256 argencoinCollateralRate = ratesContract.getArgencoinRate(collateralTokenSymbol);
 
         //Check if collateral is enough
-        require(getMaxArgcAllowed(argencoinCollateralRate, collateralTokenAmount) >= argcAmount, "Not enough collateral");
+        require(calculateMaxAllowedArgcToMint(argencoinCollateralRate, collateralTokenAmount) >= argcAmount, "Not enough collateral");
 
         //Calculate collateral and fee amounts
         uint256 feeAmount = calculateFeeAmount(argencoinCollateralRate, argcAmount);

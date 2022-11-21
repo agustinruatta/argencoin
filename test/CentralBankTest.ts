@@ -147,10 +147,15 @@ describe('CentralBank', async function () {
     });
   });
 
-  describe('getMaxArgcAllowed using DAI as collateral', () => {
-    it('calculates it', async () => {
-      expect(await centralBankContract.getMaxArgcAllowed(ethers.utils.parseUnits('300'), ethers.utils.parseUnits('10')))
+  describe('calculateMaxAllowedArgcToMint using DAI as collateral', () => {
+    it('calculates it with 300 rate', async () => {
+      expect(await centralBankContract.calculateMaxAllowedArgcToMint(ethers.utils.parseUnits('300'), ethers.utils.parseUnits('10')))
         .to.be.eq(ethers.utils.parseUnits('1980'));
+    })
+
+    it('calculates it with 450 rate', async () => {
+      expect(await centralBankContract.calculateMaxAllowedArgcToMint(ethers.utils.parseUnits('450'), ethers.utils.parseUnits('10')))
+        .to.be.eq(ethers.utils.parseUnits('2970'));
     })
   })
 
