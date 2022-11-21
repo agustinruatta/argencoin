@@ -9,6 +9,7 @@ import "./Argencoin.sol";
 import "./Staking.sol";
 
 using SafeERC20 for IERC20;
+using SafeERC20 for Argencoin;
 
 /// @custom:security-contact agustinruatta@gmail.com
 /// CentralBank has the responsability to mint, burn and has the users' positions.
@@ -168,15 +169,19 @@ contract CentralBank is Ownable {
     function burnArgencoin(string memory collateralTokenSymbol) public {
         require(positions[msg.sender][collateralTokenSymbol].mintedArgcAmount > 0, "You have not minted Argencoins with sent collateral");
 
+        uint256 mintedArgcAmount = positions[msg.sender][collateralTokenSymbol].mintedArgcAmount;
+        uint256 collateralAmount = positions[msg.sender][collateralTokenSymbol].collateralAmount;
+
         //Remove position
         positions[msg.sender][collateralTokenSymbol].mintedArgcAmount = 0;
         positions[msg.sender][collateralTokenSymbol].collateralAmount = 0;
 
-        //Transfer Argencoins back to CentralBank
-        
         //Burn Argencoins
+        argencoinContract.safeTransferFrom(msg.sender, address(this), mintedArgcAmount);
+        argencoinContract.burn(mintedArgcAmount);
 
         //Return collateral
+        //IERC20 collateralContract = getCollateralTokenAddress(collateralTokenSymbol);
     }
 
     function liquidatePosition(address positionOwner, string memory collateralTokenSymbol) public {

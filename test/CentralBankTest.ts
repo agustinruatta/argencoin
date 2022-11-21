@@ -236,18 +236,29 @@ describe('CentralBank', async function () {
     beforeEach(async () => {
       await ratesOracleContract.connect(centralBankOwner).setMockedRate(ethers.utils.parseUnits('300'));
       await centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address);
+
+      await daiContract.connect(daiOwner).mint(minter.address, ethers.utils.parseUnits('20'));
+      await daiContract.connect(minter).approve(centralBankContract.address, ethers.utils.parseUnits('20'));
+
+      await centralBankContract.connect(minter).mintArgencoin(ethers.utils.parseUnits('1980'), 'dai', ethers.utils.parseUnits('15'))
     })
 
     it('raise an error if user has not minted before', async () => {
-      await expect(centralBankContract.burnArgencoin('dai')).to.be.revertedWith('You have not minted Argencoins with sent collateral');
+      await expect(centralBankContract.connect(strange).burnArgencoin('dai'))
+        .to.be.revertedWith('You have not minted Argencoins with sent collateral');
+    });
+
+    it('raise an error if user has not approved Argencoin tranfer', async() => {
+      await expect(centralBankContract.connect(minter).burnArgencoin('dai'))
+        .to.be.revertedWith('ERC20: insufficient allowance');
     });
 
     it('burns Argencoin', async () => {
       //Prepare test
-      await daiContract.connect(daiOwner).mint(minter.address, ethers.utils.parseUnits('20'));
-      await daiContract.connect(minter).approve(centralBankContract.address, ethers.utils.parseUnits('20'));
-      await centralBankContract.connect(minter).mintArgencoin(ethers.utils.parseUnits('1980'), 'dai', ethers.utils.parseUnits('15'))
       await ratesOracleContract.setMockedRate(ethers.utils.parseUnits('600'));
+      await argencoinContract.connect(minter).approve(centralBankContract.address, ethers.utils.parseUnits('1980'))
+
+      let totalArgcSupplyBeforeBurning = await argencoinContract.totalSupply();
 
       //Burn argencoins
       await centralBankContract.connect(minter).burnArgencoin('dai');
@@ -256,6 +267,9 @@ describe('CentralBank', async function () {
       let position = await centralBankContract.getPosition(minter.address, 'dai');
       expect(position.collateralAmount).to.be.eq(0);
       expect(position.mintedArgcAmount).to.be.eq(0);
+
+      //Check Argencoins were burned
+      expect(await argencoinContract.totalSupply()).to.be.eq(totalArgcSupplyBeforeBurning.sub(ethers.utils.parseUnits('1980')));
     });
   })
 
