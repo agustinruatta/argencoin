@@ -63,7 +63,7 @@ describe('Staking', function () {
 
   describe('stake', () => {
     it('raise an error if amount is 0', async () => {
-      await expect(stakingContract.stake(0)).to.be.revertedWith('Amount to stake must bee greater than 0');
+      await expect(stakingContract.stake(0)).to.be.revertedWith('Amount to stake must be greater than 0');
     })
   });
 
