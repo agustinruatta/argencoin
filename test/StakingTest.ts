@@ -61,6 +61,12 @@ describe('Staking', function () {
     });
   });
 
+  describe('rewardPerToken', () => {
+    it('returns 0 if there is no supply', async () => {
+      expect(await stakingContract.rewardPerToken()).to.be.eq(0);
+    });
+  });
+
   describe('lastApplicableRewardTime', () => {
     it('returns finishAt because is the minimum', async () => {
       expect(await stakingContract.lastApplicableRewardTime()).to.be.eq(0);
