@@ -12,7 +12,7 @@ using SafeERC20 for Argencoin;
 /// @custom:security-contact agustinruatta@gmail.com
 contract Staking is Ownable {
     Argencoin public immutable argencoinToken;
-    
+
     mapping(string => IERC20) public rewardTokenContracts;
 
     // Duration of rewards to be paid out (in seconds)
@@ -54,7 +54,7 @@ contract Staking is Ownable {
 
     modifier updateReward(address _account) {
         rewardPerTokenStored = rewardPerToken();
-        updatedAt = lastTimeRewardApplicable();
+        updatedAt = lastApplicableRewardTime();
 
         if (_account != address(0)) {
             rewards[_account] = earned(_account);
@@ -64,10 +64,6 @@ contract Staking is Ownable {
         _;
     }
 
-    function lastTimeRewardApplicable() public view returns (uint) {
-        return _min(finishAt, block.timestamp);
-    }
-
     function rewardPerToken() public view returns (uint) {
         if (totalSupply == 0) {
             return rewardPerTokenStored;
@@ -75,7 +71,7 @@ contract Staking is Ownable {
 
         return
             rewardPerTokenStored +
-            (rewardRate * (lastTimeRewardApplicable() - updatedAt) * 1e18) /
+            (rewardRate * (lastApplicableRewardTime() - updatedAt) * 1e18) /
             totalSupply;
     }
 
@@ -135,7 +131,7 @@ contract Staking is Ownable {
         updatedAt = block.timestamp;
     }
 
-    function lastApplicableRewardTime() public view returns (uint) {
+    function lastApplicableRewardTime() private view returns (uint) {
         return _min(finishAt, block.timestamp);
     }
 
