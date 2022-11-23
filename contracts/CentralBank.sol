@@ -38,6 +38,9 @@ contract CentralBank is Ownable {
     uint16 private constant ONE_HUNDRED_BASIC_POINTS = 10000;
     uint64 private constant ONE_COLLATERAL_TOKEN_UNIT = 10**18;
     
+    
+    //TODO: EVENTOS
+    
     constructor(
         address ownerAddress,
         address _argencoinAddress,
