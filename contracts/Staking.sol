@@ -132,6 +132,8 @@ contract Staking is Ownable {
             "reward amount > balance"
         );
 
+        //TODO: Transfer to this contract
+
         finishAt = block.timestamp + duration;
         updatedAt = block.timestamp;
     }
