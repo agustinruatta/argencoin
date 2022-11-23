@@ -23,7 +23,8 @@ describe('Staking', function () {
     async function deployStakingContract() {
       return await (await ethers.getContractFactory('Staking')).deploy(
         stakingOwner.address,
-        argencoinContract.address
+        argencoinContract.address,
+        daiContract.address
       );
     }
 
@@ -31,8 +32,9 @@ describe('Staking', function () {
 
     argencoinContract = await loadFixture(deployArgencoinContract);
     daiContract = await loadFixture(deployDaiContract);
-
     stakingContract = await loadFixture(deployStakingContract);
+
+    await daiContract.connect(daiOwner).mint(stakingContract.address, ethers.utils.parseUnits("10"));
   })
 
   describe('Deployment', () => {
@@ -49,15 +51,15 @@ describe('Staking', function () {
     });
   });
 
-  describe('addRewardToken', () => {
+  describe('editRewardToken', () => {
     it('raise an error if is not owner', async () => {
-      await expect(stakingContract.connect(strange).addRewardToken('dai', daiContract.address)).to.be.revertedWith('Ownable: caller is not the owner');
+      await expect(stakingContract.connect(strange).editRewardToken(daiContract.address)).to.be.revertedWith('Ownable: caller is not the owner');
     });
 
-    it('set rewards token', async () => {
-      await stakingContract.connect(stakingOwner).addRewardToken('dai', daiContract.address);
+    it('edit rewards token', async () => {
+      await stakingContract.connect(stakingOwner).editRewardToken(argencoinContract.address);
 
-      expect(await stakingContract.rewardTokenContracts('dai')).to.be.eq(daiContract.address);
+      expect(await stakingContract.rewardToken()).to.be.eq(argencoinContract.address);
     });
   });
 
@@ -65,11 +67,13 @@ describe('Staking', function () {
     it('raise an error if amount is 0', async () => {
       await expect(stakingContract.stake(0)).to.be.revertedWith('Amount to stake must be greater than 0');
     })
-  });
 
-  describe('rewardPerToken', () => {
-    it('returns 0 if there is no supply', async () => {
-      expect(await stakingContract.rewardPerToken()).to.be.eq(0);
+    it('raise an error if transfer was not approved', async () => {
+      await expect(stakingContract.stake(ethers.utils.parseUnits("10"))).to.be.revertedWith('Dai/insufficient-balance');
+    })
+
+    it('stakes', async () => {
+      await stakingContract.connect(stakingOwner).notifyRewardAmount(1000, 500);
     });
   });
-});
+})

@@ -13,10 +13,7 @@ using SafeERC20 for Argencoin;
 contract Staking is Ownable {
     Argencoin public immutable argencoinToken;
 
-    mapping(string => IERC20) public rewardTokenContracts;
-
-    // Duration of rewards to be paid out (in seconds)
-    uint public duration;
+    IERC20 public rewardToken;
 
     // Timestamp when rewards finish
     uint public finishAt;
@@ -42,14 +39,15 @@ contract Staking is Ownable {
     // User address => staked amount
     mapping(address => uint) public balanceOf;
 
-    constructor(address stakingOwner, address argencoinAddress) {
+    constructor(address stakingOwner, address argencoinAddress, address rewardTokenAddress) {
         argencoinToken = Argencoin(argencoinAddress);
+        rewardToken = IERC20(rewardTokenAddress);
 
         _transferOwnership(stakingOwner);
     }
 
-    function addRewardToken(string memory tokenSymbol, address erc20ContractAddress) external onlyOwner {
-        rewardTokenContracts[tokenSymbol] = IERC20(erc20ContractAddress);
+    function editRewardToken(address erc20ContractAddress) external onlyOwner {
+        rewardToken = IERC20(erc20ContractAddress);
     }
 
     modifier updateReward(address _account) {
@@ -77,7 +75,7 @@ contract Staking is Ownable {
 
     function stake(uint _amount) external updateReward(msg.sender) {
         require(_amount > 0, "Amount to stake must be greater than 0");
-        rewardTokenContracts["dai"].transferFrom(msg.sender, address(this), _amount);
+        rewardToken.transferFrom(msg.sender, address(this), _amount);
         balanceOf[msg.sender] += _amount;
         totalSupply += _amount;
     }
@@ -86,7 +84,7 @@ contract Staking is Ownable {
         require(_amount > 0, "Amount to withdraw must be greater than 0");
         balanceOf[msg.sender] -= _amount;
         totalSupply -= _amount;
-        rewardTokenContracts["dai"].transfer(msg.sender, _amount);
+        rewardToken.transfer(msg.sender, _amount);
     }
 
     function earned(address _account) public view returns (uint) {
@@ -100,30 +98,33 @@ contract Staking is Ownable {
         uint reward = rewards[msg.sender];
         if (reward > 0) {
             rewards[msg.sender] = 0;
-            rewardTokenContracts["dai"].transfer(msg.sender, reward);
+            rewardToken.transfer(msg.sender, reward);
         }
     }
 
-    function setRewardsDuration(uint _duration) external onlyOwner {
-        require(finishAt < block.timestamp, "reward duration not finished");
-        duration = _duration;
-    }
-
-    function notifyRewardAmount(uint _amount)
+    /**
+     * @param amount Amount of reward token to give in duration.
+     * @param duration Duration of rewards to be paid out (in seconds)
+     */
+    function notifyRewardAmount(uint amount, uint duration)
         external
         onlyOwner
         updateReward(address(0))
     {
+        require(finishAt < block.timestamp, "reward duration not finished");
+
         if (block.timestamp >= finishAt) {
-            rewardRate = _amount / duration;
+            rewardRate = amount / duration;
         } else {
             uint remainingRewards = (finishAt - block.timestamp) * rewardRate;
-            rewardRate = (_amount + remainingRewards) / duration;
+            rewardRate = (amount + remainingRewards) / duration;
         }
 
-        require(rewardRate > 0, "reward rate = 0");
+        require(rewardRate > 0, "Reward rate must be greater than 0");
+
+        //Check if contract has enough balance to give the rewards
         require(
-            rewardRate * duration <= rewardTokenContracts["dai"].balanceOf(address(this)),
+            rewardRate * duration <= rewardToken.balanceOf(address(this)),
             "reward amount > balance"
         );
 
