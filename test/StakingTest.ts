@@ -63,6 +63,18 @@ describe('Staking', function () {
     });
   });
 
+  describe('editArgencoinToken', () => {
+    it('raise an error if is not owner', async () => {
+      await expect(stakingContract.connect(strange).editArgencoinToken(argencoinContract.address)).to.be.revertedWith('Ownable: caller is not the owner');
+    });
+
+    it('edit rewards token', async () => {
+      await stakingContract.connect(stakingOwner).editArgencoinToken(daiContract.address);
+
+      expect(await stakingContract.argencoinToken()).to.be.eq(daiContract.address);
+    });
+  });
+
   describe('stake', () => {
     it('raise an error if amount is 0', async () => {
       await expect(stakingContract.stake(0)).to.be.revertedWith('Amount to stake must be greater than 0');
