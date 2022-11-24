@@ -122,14 +122,13 @@ contract CentralBank is Ownable {
     }
 
     function calculateFeeAmount(uint256 argencoinCollateralRate, uint256 argencoinAmount) public view returns (uint256) {
-        //TODO: improves this code
-        //TODO: should it be off peg? collateral?
+        //Future improvement: make calculous clearer
 
-        uint256 afterFee = (argencoinAmount * ONE_HUNDRED_BASIC_POINTS) / (ONE_HUNDRED_BASIC_POINTS - mintingFeeBasicPoints);
-        uint256 afterCollateral = (afterFee * collateralBasicPoints) / ONE_HUNDRED_BASIC_POINTS;
-        uint256 toCollateral = (afterCollateral * ONE_COLLATERAL_TOKEN_UNIT) / argencoinCollateralRate;
+        uint256 argencoinsAfterFee = (argencoinAmount * ONE_HUNDRED_BASIC_POINTS) / (ONE_HUNDRED_BASIC_POINTS - mintingFeeBasicPoints);
+        uint256 afterAppliedCollateral = (argencoinsAfterFee * collateralBasicPoints) / ONE_HUNDRED_BASIC_POINTS;
+        uint256 toCollateralRate = (afterAppliedCollateral * ONE_COLLATERAL_TOKEN_UNIT) / argencoinCollateralRate;
 
-        return (toCollateral * mintingFeeBasicPoints) / ONE_HUNDRED_BASIC_POINTS;
+        return (toCollateralRate * mintingFeeBasicPoints) / ONE_HUNDRED_BASIC_POINTS;
     }
 
     function mintArgencoin(uint256 argcAmount, string memory collateralTokenSymbol, uint256 collateralTokenAmount) external {
@@ -147,8 +146,8 @@ contract CentralBank is Ownable {
         uint256 feeAmount = calculateFeeAmount(argencoinCollateralRate, argcAmount);
         uint256 collateralTokenAmountAfterFee = collateralTokenAmount - feeAmount;
 
-        transferArgencoinCollateral(collateralContract, collateralTokenAmountAfterFee);
-        transferFeeCollateral(collateralTokenSymbol, collateralContract, feeAmount);
+        _transferArgencoinCollateral(collateralContract, collateralTokenAmountAfterFee);
+        _transferFeeCollateral(collateralTokenSymbol, collateralContract, feeAmount);
 
         //Save position
         positions[msg.sender][collateralTokenSymbol] = Position(
@@ -161,7 +160,7 @@ contract CentralBank is Ownable {
         argencoinContract.mint(msg.sender, argcAmount);
     }
 
-    function transferArgencoinCollateral(IERC20 collateralContract, uint256 collateralTokenAmountAfterFee) internal {
+    function _transferArgencoinCollateral(IERC20 collateralContract, uint256 collateralTokenAmountAfterFee) private {
         uint256 centralBankBalanceBeforeTransfer = collateralContract.balanceOf(address(this));
 
         collateralContract.safeTransferFrom(msg.sender, address(this), collateralTokenAmountAfterFee);
@@ -169,7 +168,7 @@ contract CentralBank is Ownable {
         require(collateralContract.balanceOf(address(this)) == centralBankBalanceBeforeTransfer + collateralTokenAmountAfterFee, "Collateral transfer was not done");
     }
 
-    function transferFeeCollateral(string memory tokenSymbol, IERC20 collateralContract, uint256 feeAmount) private {
+    function _transferFeeCollateral(string memory tokenSymbol, IERC20 collateralContract, uint256 feeAmount) private {
         address stakingContractAddress = address(stakingContracts[tokenSymbol]);
 
         uint256 stakingBalanceBeforeTransfer = collateralContract.balanceOf(stakingContractAddress);
