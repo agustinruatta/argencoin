@@ -59,7 +59,7 @@ contract Staking is Ownable {
         updatedAt = _oldestApplicableRewardTime();
 
         if (_account != address(0)) {
-            rewards[_account] = earned(_account);
+            rewards[_account] = _earned(_account);
             userRewardPerTokenPaid[_account] = rewardPerTokenStored;
         }
 
@@ -82,10 +82,6 @@ contract Staking is Ownable {
         totalSupply -= _amount;
 
         argencoinToken.safeTransfer(msg.sender, _amount);
-    }
-
-    function earned(address _account) public view returns (uint) {
-        return ((balanceOf[_account] * (_getRewardAmountPerToken() - userRewardPerTokenPaid[_account])) / 1e18) + rewards[_account];
     }
 
     function collectReward() external updateReward(msg.sender) {
@@ -129,6 +125,10 @@ contract Staking is Ownable {
         return
             rewardPerTokenStored +
             (rewardRate * (_oldestApplicableRewardTime() - updatedAt) * 1e18) / totalSupply;
+    }
+
+    function _earned(address _account) private view returns (uint) {
+        return ((balanceOf[_account] * (_getRewardAmountPerToken() - userRewardPerTokenPaid[_account])) / 1e18) + rewards[_account];
     }
 
     function _oldestApplicableRewardTime() private view returns (uint) {

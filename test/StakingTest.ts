@@ -118,9 +118,6 @@ describe('Staking', function () {
     })
 
     it('stakes one user', async () => {
-      //Aprove so we son't have any problems
-      await argencoinContract.connect(userWithArgencoinsA).approve(stakingContract.address, ethers.utils.parseUnits("500"));
-
       //Reward 10 dai in the next 1000 seconds
       await stakingContract.connect(stakingOwner).setNextReward(ethers.utils.parseUnits("10"), 1000);
 
