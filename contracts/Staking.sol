@@ -16,28 +16,28 @@ contract Staking is Ownable {
     IERC20 public rewardToken;
 
     // Timestamp when rewards finish
-    uint public finishAt;
+    uint256 public finishAt;
 
     // Reward finish time
-    uint public updatedAt;
+    uint256 public updatedAt;
 
     // Reward to be paid out per second
-    uint public rewardRate;
+    uint256 public rewardRate;
 
     // Sum of (reward rate * dt * 1e18 / total supply)
-    uint public rewardPerTokenStored;
+    uint256 public rewardPerTokenStored;
 
     // User address => rewardPerTokenStored
-    mapping(address => uint) public userRewardPerTokenPaid;
+    mapping(address => uint256) public userRewardPerTokenPaid;
 
     // User address => rewards to be claimed
-    mapping(address => uint) public rewards;
+    mapping(address => uint256) public rewards;
 
     // Total staked
-    uint public totalSupply;
+    uint256 public totalSupply;
 
     // User address => staked amount
-    mapping(address => uint) public balanceOf;
+    mapping(address => uint256) public balanceOf;
 
     constructor(address stakingOwner, address argencoinAddress, address rewardTokenAddress) {
         argencoinToken = Argencoin(argencoinAddress);
@@ -66,7 +66,7 @@ contract Staking is Ownable {
         _;
     }
 
-    function stake(uint _amount) external updateReward(msg.sender) {
+    function stake(uint256 _amount) external updateReward(msg.sender) {
         require(_amount > 0, "Amount to stake must be greater than 0");
 
         argencoinToken.safeTransferFrom(msg.sender, address(this), _amount);
@@ -75,7 +75,7 @@ contract Staking is Ownable {
         totalSupply += _amount;
     }
 
-    function withdraw(uint _amount) external updateReward(msg.sender) {
+    function withdraw(uint256 _amount) external updateReward(msg.sender) {
         require(_amount > 0, "Amount to withdraw must be greater than 0");
 
         balanceOf[msg.sender] -= _amount;
@@ -85,7 +85,7 @@ contract Staking is Ownable {
     }
 
     function collectReward() external updateReward(msg.sender) {
-        uint reward = rewards[msg.sender];
+        uint256 reward = rewards[msg.sender];
 
         if (reward > 0) {
             rewards[msg.sender] = 0;
@@ -135,7 +135,7 @@ contract Staking is Ownable {
         return _min(finishAt, block.timestamp);
     }
 
-    function _min(uint x, uint y) private pure returns (uint) {
+    function _min(uint256 x, uint256 y) private pure returns (uint) {
         return x <= y ? x : y;
     }
 }
