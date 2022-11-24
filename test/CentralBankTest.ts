@@ -1,10 +1,11 @@
 import { loadFixture } from '@nomicfoundation/hardhat-network-helpers';
+import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers';
 import { expect } from 'chai';
 import { ethers } from 'hardhat';
 import { CentralBank, Argencoin, RatesOracle, Dai, Staking } from '../typechain-types';
 
-describe('CentralBank', async function () {
-  const [argcAdmin, centralBankOwner, daiOwner, ratesOracleOwner, strange, minter, stakingOwner, strange2] = await ethers.getSigners();
+describe('CentralBank', function () {
+  let [argcAdmin, centralBankOwner, daiOwner, ratesOracleOwner, strange, minter, stakingOwner, strange2]: SignerWithAddress[] = [];;
   const DEFAULT_COLLATERAL_PERCENTAGE = 150 * 100;
   const DEFAULT_LIQUIDATION_PERCENTAGE = 125 * 100;
   const DEFAULT_MINTING_FEE = 100;
@@ -22,7 +23,6 @@ describe('CentralBank', async function () {
           centralBankOwner.address,
           argencoinContract.address,
           ratesOracleContract.address,
-          stakingContract.address,
           DEFAULT_COLLATERAL_PERCENTAGE,
           DEFAULT_LIQUIDATION_PERCENTAGE,
           DEFAULT_MINTING_FEE
@@ -42,8 +42,11 @@ describe('CentralBank', async function () {
     }
 
     async function deployStakingContract() {
-      return await (await ethers.getContractFactory('Staking')).connect(stakingOwner).deploy();
+      return await (await ethers.getContractFactory('Staking')).connect(stakingOwner)
+        .deploy(stakingOwner.address, argencoinContract.address, daiContract.address);
     }
+
+    [argcAdmin, centralBankOwner, daiOwner, ratesOracleOwner, strange, minter, stakingOwner, strange2] = await ethers.getSigners();
 
     argencoinContract = await loadFixture(deployArgencoinContract);
     ratesOracleContract = await loadFixture(deployRatesOracleContract);
@@ -52,6 +55,7 @@ describe('CentralBank', async function () {
     centralBankContract = await loadFixture(deployCentralBankContract);
 
     await argencoinContract.grantRole(await argencoinContract.MINTER_ROLE(), centralBankContract.address)
+    await centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address, stakingContract.address);
   })
 
   describe('Deployment', () => {
@@ -75,19 +79,17 @@ describe('CentralBank', async function () {
 
   describe('addNewCollateralToken', () => {
     it('Should not allow if is not owner', async () => {
-      await expect(centralBankContract.connect(strange).addNewCollateralToken('dai', daiContract.address)).to.be.revertedWith('Ownable: caller is not the owner');
+      await expect(centralBankContract.connect(strange).addNewCollateralToken('dai', daiContract.address, stakingContract.address)).to.be.revertedWith('Ownable: caller is not the owner');
     });
 
     it('Should not allow add token again', async () => {
-      centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address);
-
-      await expect(centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address)).to.be.revertedWith('Token is already set. Please, call \'editColleteralToken\' function.')
+      await expect(centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address, stakingContract.address)).to.be.revertedWith('Token is already set. Please, call \'editColleteralToken\' function.')
     });
 
     it('Allows to add token', async () => {
-      await centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address);
+      await centralBankContract.connect(centralBankOwner).addNewCollateralToken('usdc', daiContract.address, stakingContract.address);
 
-      expect(await centralBankContract.connect(centralBankOwner).getCollateralTokenContract('dai')).to.be.eq(daiContract.address);
+      expect(await centralBankContract.connect(centralBankOwner).getCollateralTokenContract('usdc')).to.be.eq(daiContract.address);
     });
   });
 
@@ -115,19 +117,17 @@ describe('CentralBank', async function () {
 
   describe('editCollateralToken', () => {
     it('Should not allow if is not owner', async () => {
-      await expect(centralBankContract.connect(strange).editCollateralToken('dai', daiContract.address)).to.be.revertedWith('Ownable: caller is not the owner');
+      await expect(centralBankContract.connect(strange).editCollateralToken('dai', daiContract.address, stakingContract.address)).to.be.revertedWith('Ownable: caller is not the owner');
     });
 
     it('Should not allow edit token if is not set', async () => {
-      await expect(centralBankContract.connect(centralBankOwner).editCollateralToken('dai', daiContract.address)).to.be.revertedWith('Token is not set yet. Please, call \'addNewColleteralToken\' function.')
+      await expect(centralBankContract.connect(centralBankOwner).editCollateralToken('usdc', daiContract.address,  stakingContract.address)).to.be.revertedWith('Token is not set yet. Please, call \'addNewColleteralToken\' function.')
     });
 
     it('Allows to edit token', async () => {
       const USDC_CONTRACT_ADDRESS = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48';
 
-      await centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', USDC_CONTRACT_ADDRESS);
-
-      await centralBankContract.connect(centralBankOwner).editCollateralToken('dai', daiContract.address);
+      await centralBankContract.connect(centralBankOwner).editCollateralToken('dai', daiContract.address, stakingContract.address);
 
       expect(await centralBankContract.connect(centralBankOwner).getCollateralTokenContract('dai')).to.be.eq(daiContract.address);
     });
@@ -135,7 +135,7 @@ describe('CentralBank', async function () {
 
   describe('getCollateralTokenContract', () => {
     it('Raise error if token is not set', async () =>  {
-      await expect(centralBankContract.getCollateralTokenContract('dai')).to.be.revertedWith('Unkwnown collateral token.');
+      await expect(centralBankContract.getCollateralTokenContract('unk')).to.be.revertedWith('Unkwnown collateral token.');
     });
   });
 
@@ -169,7 +169,6 @@ describe('CentralBank', async function () {
   describe('mintArgencoin using DAI as collateral', () => {
     beforeEach(async () => {
       await ratesOracleContract.connect(ratesOracleOwner).setArgencoinRate('dai', ethers.utils.parseUnits('300'));
-      await centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address);
     })
 
     it('Should not allow mint less than 1 Argencoin', async () => {
@@ -260,7 +259,6 @@ describe('CentralBank', async function () {
   describe('burnArgencoin using DAI as collateral', () => {
     beforeEach(async () => {
       await ratesOracleContract.connect(ratesOracleOwner).setArgencoinRate('dai', ethers.utils.parseUnits('300'));
-      await centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address);
 
       await daiContract.connect(daiOwner).mint(minter.address, ethers.utils.parseUnits('20'));
       await daiContract.connect(minter).approve(centralBankContract.address, ethers.utils.parseUnits('20'));
@@ -318,7 +316,6 @@ describe('CentralBank', async function () {
   describe('liquidatePosition using DAI as collateral', () => {
     beforeEach(async () => {
       await ratesOracleContract.connect(ratesOracleOwner).setArgencoinRate('dai', ethers.utils.parseUnits('300'));
-      await centralBankContract.connect(centralBankOwner).addNewCollateralToken('dai', daiContract.address);
 
       await daiContract.connect(daiOwner).mint(minter.address, ethers.utils.parseUnits('20'));
       await daiContract.connect(daiOwner).mint(strange.address, ethers.utils.parseUnits('20'));

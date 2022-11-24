@@ -7,7 +7,7 @@ describe('Argencoin', function () {
     const [owner, minter, strange] = await ethers.getSigners();
 
     const argencoinContract = await (await ethers.getContractFactory('Argencoin')).deploy();
-    argencoinContract.grantRole(await argencoinContract.MINTER_ROLE(), await minter.getAddress())
+    argencoinContract.grantRole(await argencoinContract.MINTER_ROLE(), minter.address)
 
     return { argencoinContract, owner, minter, strange };
   }
@@ -23,7 +23,7 @@ describe('Argencoin', function () {
       expect(await argencoinContract.totalSupply()).to.equal(0);
     });
 
-    it('Should set the right owner', async () =>  {
+    it('should set the right owner', async () =>  {
       const { argencoinContract, owner } = await deployArgencoinContract();
 
       expect(await argencoinContract.hasRole(await argencoinContract.DEFAULT_ADMIN_ROLE(), owner.getAddress())).to.equal(true);
