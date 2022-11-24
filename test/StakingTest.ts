@@ -88,7 +88,36 @@ describe('Staking', function () {
       await expect(stakingContract.stake(ethers.utils.parseUnits("10"))).to.be.revertedWith('ERC20: insufficient allowance');
     })
 
-    it('one user stakes', async () => {
+    it('updates balance', async () => {
+      await argencoinContract.connect(userWithArgencoinsA).approve(stakingContract.address, ethers.utils.parseUnits("500"));
+      await stakingContract.connect(userWithArgencoinsA).stake(ethers.utils.parseUnits("10"));
+
+      expect(await stakingContract.balanceOf(userWithArgencoinsA.address)).to.be.eq(ethers.utils.parseUnits("10"));
+    })
+  });
+
+  describe('withdraw', () => {
+    it('raise an error if amount is 0', async () => {
+      await expect(stakingContract.withdraw(0)).to.be.revertedWith('Amount to withdraw must be greater than 0');
+    })
+
+    it('updates balance', async () => {
+      await argencoinContract.connect(userWithArgencoinsA).approve(stakingContract.address, ethers.utils.parseUnits("500"));
+      await stakingContract.connect(userWithArgencoinsA).stake(ethers.utils.parseUnits("10"));
+
+      await stakingContract.connect(userWithArgencoinsA).withdraw(ethers.utils.parseUnits("4"));
+
+      expect(await stakingContract.balanceOf(userWithArgencoinsA.address)).to.be.eq(ethers.utils.parseUnits("6"));
+    })
+  });
+
+  describe('collectReward', () => {
+    beforeEach(async () => {
+      await argencoinContract.connect(userWithArgencoinsA).approve(stakingContract.address, ethers.utils.parseUnits("500"));
+      await argencoinContract.connect(userWithArgencoinsB).approve(stakingContract.address, ethers.utils.parseUnits("1000"));
+    })
+
+    it('stakes one user', async () => {
       //Aprove so we son't have any problems
       await argencoinContract.connect(userWithArgencoinsA).approve(stakingContract.address, ethers.utils.parseUnits("500"));
 
@@ -107,11 +136,7 @@ describe('Staking', function () {
       expect(await daiContract.balanceOf(userWithArgencoinsA.address)).to.be.eq(ethers.utils.parseUnits("9"));    
     });
 
-    it('two user stakes', async () => {
-      //Aprove so we son't have any problems
-      await argencoinContract.connect(userWithArgencoinsA).approve(stakingContract.address, ethers.utils.parseUnits("500"));
-      await argencoinContract.connect(userWithArgencoinsB).approve(stakingContract.address, ethers.utils.parseUnits("1000"));
-
+    it('stake two users', async () => {
       //Reward 10 dai in the next 1000 seconds
       await stakingContract.connect(stakingOwner).setNextReward(ethers.utils.parseUnits("10"), 1000);
 

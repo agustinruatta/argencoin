@@ -55,7 +55,7 @@ contract Staking is Ownable {
     }
 
     modifier updateReward(address _account) {
-        rewardPerTokenStored = getRewardPerToken();
+        rewardPerTokenStored = _getRewardAmountPerToken();
         updatedAt = _oldestApplicableRewardTime();
 
         if (_account != address(0)) {
@@ -64,16 +64,6 @@ contract Staking is Ownable {
         }
 
         _;
-    }
-
-    function getRewardPerToken() public view returns (uint) {
-        if (totalSupply == 0) {
-            return rewardPerTokenStored;
-        }
-
-        return
-            rewardPerTokenStored +
-            (rewardRate * (_oldestApplicableRewardTime() - updatedAt) * 1e18) / totalSupply;
     }
 
     function stake(uint _amount) external updateReward(msg.sender) {
@@ -95,7 +85,7 @@ contract Staking is Ownable {
     }
 
     function earned(address _account) public view returns (uint) {
-        return ((balanceOf[_account] * (getRewardPerToken() - userRewardPerTokenPaid[_account])) / 1e18) + rewards[_account];
+        return ((balanceOf[_account] * (_getRewardAmountPerToken() - userRewardPerTokenPaid[_account])) / 1e18) + rewards[_account];
     }
 
     function collectReward() external updateReward(msg.sender) {
@@ -126,6 +116,19 @@ contract Staking is Ownable {
 
         finishAt = block.timestamp + duration;
         updatedAt = block.timestamp;
+    }
+
+    /**
+     * Returns how many rewards give per second.
+     */
+    function _getRewardAmountPerToken() private view returns (uint) {
+        if (totalSupply == 0) {
+            return rewardPerTokenStored;
+        }
+
+        return
+            rewardPerTokenStored +
+            (rewardRate * (_oldestApplicableRewardTime() - updatedAt) * 1e18) / totalSupply;
     }
 
     function _oldestApplicableRewardTime() private view returns (uint) {
