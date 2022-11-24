@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/interfaces/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./Argencoin.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 using SafeERC20 for IERC20;
 using SafeERC20 for Argencoin;
@@ -56,7 +57,7 @@ contract Staking is Ownable {
 
     modifier updateReward(address _account) {
         rewardPerTokenStored = rewardPerToken();
-        updatedAt = lastApplicableRewardTime();
+        updatedAt = oldestApplicableRewardTime();
 
         if (_account != address(0)) {
             rewards[_account] = earned(_account);
@@ -73,13 +74,13 @@ contract Staking is Ownable {
 
         return
             rewardPerTokenStored +
-            (rewardRate * (lastApplicableRewardTime() - updatedAt) * 1e18) /
+            (rewardRate * (oldestApplicableRewardTime() - updatedAt) * 1e18) /
             totalSupply;
     }
 
     function stake(uint _amount) external updateReward(msg.sender) {
         require(_amount > 0, "Amount to stake must be greater than 0");
-        rewardToken.transferFrom(msg.sender, address(this), _amount);
+        argencoinToken.transferFrom(msg.sender, address(this), _amount);
         balanceOf[msg.sender] += _amount;
         totalSupply += _amount;
     }
@@ -88,7 +89,7 @@ contract Staking is Ownable {
         require(_amount > 0, "Amount to withdraw must be greater than 0");
         balanceOf[msg.sender] -= _amount;
         totalSupply -= _amount;
-        rewardToken.transfer(msg.sender, _amount);
+        argencoinToken.transfer(msg.sender, _amount);
     }
 
     function earned(address _account) public view returns (uint) {
@@ -110,33 +111,23 @@ contract Staking is Ownable {
      * @param amount Amount of reward token to give in duration.
      * @param duration Duration (in seconds) that rewards will be paid out.
      */
-    function setNextReward(uint amount, uint duration)
+    function setNextReward(uint256 amount, uint256 duration)
         external
         onlyOwner
         updateReward(address(0))
     {
-        require(finishAt < block.timestamp, "reward duration not finished");
+        require(finishAt < block.timestamp, "Previous reward has not finished yet");
+        require(amount <= rewardToken.balanceOf(address(this)), "Not enough funds in staking to give that amount of reward");
 
-        if (block.timestamp >= finishAt) {
-            rewardRate = amount / duration;
-        } else {
-            uint remainingRewards = (finishAt - block.timestamp) * rewardRate;
-            rewardRate = (amount + remainingRewards) / duration;
-        }
+        rewardRate = amount / duration;
 
         require(rewardRate > 0, "Reward rate must be greater than 0");
-
-        //Check if contract has enough balance to give the rewards
-        require(
-            rewardRate * duration <= rewardToken.balanceOf(address(this)),
-            "reward amount > balance"
-        );
 
         finishAt = block.timestamp + duration;
         updatedAt = block.timestamp;
     }
 
-    function lastApplicableRewardTime() private view returns (uint) {
+    function oldestApplicableRewardTime() private view returns (uint) {
         return _min(finishAt, block.timestamp);
     }
 
