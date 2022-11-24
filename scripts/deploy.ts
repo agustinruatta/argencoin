@@ -1,18 +1,51 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const ONE_YEAR_IN_SECS = 365 * 24 * 60 * 60;
-  const unlockTime = currentTimestampInSeconds + ONE_YEAR_IN_SECS;
+  const [argcAdmin] = await ethers.getSigners();
+  let centralBankOwner = argcAdmin;
+  let ratesOracleOwner = argcAdmin;
+  let stakingOwner = argcAdmin;
+  let daiOwner = argcAdmin;
 
-  const lockedAmount = ethers.utils.parseEther("1");
+  const DEFAULT_COLLATERAL_PERCENTAGE = 150 * 100;
+  const DEFAULT_LIQUIDATION_PERCENTAGE = 125 * 100;
+  const DEFAULT_MINTING_FEE = 100;
 
-  const Lock = await ethers.getContractFactory("Lock");
-  const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
+  let argencoinContract = await (await ethers.getContractFactory('Argencoin')).connect(argcAdmin).deploy();
 
-  await lock.deployed();
+  let ratesOracleContract = await (await ethers.getContractFactory('RatesOracle')).connect(ratesOracleOwner).deploy();
 
-  console.log(`Lock with 1 ETH and unlock timestamp ${unlockTime} deployed to ${lock.address}`);
+  let daiContract = await (await ethers.getContractFactory('Dai')).connect(daiOwner).deploy(1);
+
+  let stakingContract = await (await ethers.getContractFactory('Staking')).connect(stakingOwner)
+    .deploy(stakingOwner.address, argencoinContract.address, daiContract.address);
+
+  let centralBankContract = await (await ethers.getContractFactory('CentralBank'))
+    .deploy(
+      centralBankOwner.address,
+      argencoinContract.address,
+      ratesOracleContract.address,
+      DEFAULT_COLLATERAL_PERCENTAGE,
+      DEFAULT_LIQUIDATION_PERCENTAGE,
+      DEFAULT_MINTING_FEE
+    );
+  
+  await argencoinContract.deployed();
+  await ratesOracleContract.deployed();
+  await daiContract.deployed();
+  await stakingContract.deployed();
+  await centralBankContract.deployed();
+
+  await argencoinContract.grantRole(await argencoinContract.MINTER_ROLE(), centralBankContract.address);
+
+  let logMessage = `CentralBank deployed to ${centralBankContract.address}.
+Argencoin deployed to ${argencoinContract.address}.
+RatesOracle deployed to ${ratesOracleContract.address}.
+Dai deployed to ${daiContract.address}.
+Staking deployed to ${stakingContract.address}.
+CentralBank deployed to ${centralBankContract.address}.`
+  
+  console.log(logMessage);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
