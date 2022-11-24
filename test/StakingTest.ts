@@ -5,7 +5,7 @@ import { ethers } from 'hardhat';
 import { Argencoin, Dai, Staking } from '../typechain-types';
 
 describe('Staking', function () {
-  let [unused, stakingOwner, argencoinOwner, daiOwner, strange, userWithArgencoins] : SignerWithAddress[] = [];
+  let [unused, stakingOwner, argencoinOwnerA, daiOwner, strange, userWithArgencoinsA, userWithArgencoinsB] : SignerWithAddress[] = [];
 
   let stakingContract: Staking;
   let argencoinContract: Argencoin;
@@ -13,7 +13,7 @@ describe('Staking', function () {
 
   beforeEach(async () => {
     async function deployArgencoinContract() {
-      return await (await ethers.getContractFactory('Argencoin')).connect(argencoinOwner).deploy();
+      return await (await ethers.getContractFactory('Argencoin')).connect(argencoinOwnerA).deploy();
     }
 
     async function deployDaiContract() {
@@ -28,7 +28,7 @@ describe('Staking', function () {
       );
     }
 
-    [unused, stakingOwner, argencoinOwner, daiOwner, strange, userWithArgencoins] = await ethers.getSigners();
+    [unused, stakingOwner, argencoinOwnerA, daiOwner, strange, userWithArgencoinsA, userWithArgencoinsB] = await ethers.getSigners();
 
     argencoinContract = await loadFixture(deployArgencoinContract);
     daiContract = await loadFixture(deployDaiContract);
@@ -36,8 +36,9 @@ describe('Staking', function () {
 
     await daiContract.connect(daiOwner).mint(stakingContract.address, ethers.utils.parseUnits("10"));
 
-    await argencoinContract.connect(argencoinOwner).grantRole(await argencoinContract.MINTER_ROLE(), argencoinOwner.address);
-    await argencoinContract.connect(argencoinOwner).mint(userWithArgencoins.address, ethers.utils.parseUnits("300"));
+    await argencoinContract.connect(argencoinOwnerA).grantRole(await argencoinContract.MINTER_ROLE(), argencoinOwnerA.address);
+    await argencoinContract.connect(argencoinOwnerA).mint(userWithArgencoinsA.address, ethers.utils.parseUnits("500"));
+    await argencoinContract.connect(argencoinOwnerA).mint(userWithArgencoinsB.address, ethers.utils.parseUnits("1000"));
   })
 
   describe('Deployment', () => {
@@ -84,27 +85,56 @@ describe('Staking', function () {
     })
 
     it('raise an error if transfer was not approved', async () => {
-      await expect(stakingContract.stake(ethers.utils.parseUnits("10"))).to.be.revertedWith('Dai/insufficient-balance');
+      await expect(stakingContract.stake(ethers.utils.parseUnits("10"))).to.be.revertedWith('ERC20: insufficient allowance');
     })
 
-    it('stakes', async () => {
-      await stakingContract.connect(stakingOwner).setNextReward(ethers.utils.parseUnits("5"), 3600);
+    it('one user stakes', async () => {
+      //Aprove so we son't have any problems
+      await argencoinContract.connect(userWithArgencoinsA).approve(stakingContract.address, ethers.utils.parseUnits("500"));
+
+      //Reward 10 dai in the next 1000 seconds
+      await stakingContract.connect(stakingOwner).setNextReward(ethers.utils.parseUnits("10"), 1000);
+
+      //User A stake after 100 seconds
+      await time.setNextBlockTimestamp((await ethers.provider.getBlock("latest")).timestamp + 100);
+      await stakingContract.connect(userWithArgencoinsA).stake(ethers.utils.parseUnits("10"));
+
+      //Collect rewards after all has ended
+      await time.setNextBlockTimestamp((await ethers.provider.getBlock("latest")).timestamp + 5000);
+      await stakingContract.connect(userWithArgencoinsA).collectReward();
+
+      //Check that users has earned 
+      expect(await daiContract.balanceOf(userWithArgencoinsA.address)).to.be.eq(ethers.utils.parseUnits("9"));    
+    });
+
+    it('two user stakes', async () => {
+      //Aprove so we son't have any problems
+      await argencoinContract.connect(userWithArgencoinsA).approve(stakingContract.address, ethers.utils.parseUnits("500"));
+      await argencoinContract.connect(userWithArgencoinsB).approve(stakingContract.address, ethers.utils.parseUnits("1000"));
+
+      //Reward 10 dai in the next 1000 seconds
+      await stakingContract.connect(stakingOwner).setNextReward(ethers.utils.parseUnits("10"), 1000);
+
+      //User A stake after 100 seconds
+      await time.setNextBlockTimestamp((await ethers.provider.getBlock("latest")).timestamp + 100);
+      await stakingContract.connect(userWithArgencoinsA).stake(ethers.utils.parseUnits("10"));
+
+      //User B stake after 500 seconds since the beginning of reward
+      await time.setNextBlockTimestamp((await ethers.provider.getBlock("latest")).timestamp + 400);
+      await stakingContract.connect(userWithArgencoinsB).stake(ethers.utils.parseUnits("30"));
+
+      //Collect rewards after all has ended
+      await time.setNextBlockTimestamp((await ethers.provider.getBlock("latest")).timestamp + 5000);
+      await stakingContract.connect(userWithArgencoinsA).collectReward();
+      await stakingContract.connect(userWithArgencoinsB).collectReward();
+
+      //Check that users has earned 
+      expect(await daiContract.balanceOf(userWithArgencoinsA.address)).to.be.eq(ethers.utils.parseUnits("5.25"));
+      expect(await daiContract.balanceOf(userWithArgencoinsB.address)).to.be.eq(ethers.utils.parseUnits("3.75"));
     });
   });
 
   describe('setNextReward', () => {
-    it('set for first time', async () => {
-      //Execute
-      await stakingContract.connect(stakingOwner).setNextReward(ethers.utils.parseUnits("5"), 3600);
-
-      //Asserts
-      expect(await stakingContract.rewardRate()).to.be.eq(ethers.utils.parseUnits("5").div(3600));
-
-      const latestBlock = await ethers.provider.getBlock("latest");
-      expect(await stakingContract.finishAt()).to.be.eq(latestBlock.timestamp + 3600);
-      expect(await stakingContract.updatedAt()).to.be.eq(latestBlock.timestamp || 0);
-    });
-
     it('raise an error if is trying to set it but previous set was not done yet', async() => {
       await stakingContract.connect(stakingOwner).setNextReward(ethers.utils.parseUnits("2"), 3600);
 
@@ -116,30 +146,19 @@ describe('Staking', function () {
     });
 
     it('raise an error if staking has not enough funds to reward', async () => {
-      await expect(stakingContract.connect(stakingOwner).setNextReward(ethers.utils.parseUnits("100"), 3600)).to.be.revertedWith('Not enough funds in staking to give that amount of reward');
+      await expect(stakingContract.connect(stakingOwner).setNextReward(ethers.utils.parseUnits("1000"), 3600)).to.be.revertedWith('Not enough funds in staking to give that amount of reward');
     });
 
-    it('set after someone has staked', async () => {
-      await argencoinContract.connect(userWithArgencoins).approve(stakingContract.address, ethers.utils.parseUnits("100"));
-
-      //Set reward
-      await stakingContract.connect(stakingOwner).setNextReward(ethers.utils.parseUnits("2"), 1000);
-
-      //Stake
-      await time.setNextBlockTimestamp((await ethers.provider.getBlock("latest")).timestamp + 100);
-      await stakingContract.connect(userWithArgencoins).stake(ethers.utils.parseUnits("10"));
-
-      //Set new next reward
-      await time.setNextBlockTimestamp((await ethers.provider.getBlock("latest")).timestamp + 1000);
-      await stakingContract.connect(stakingOwner).setNextReward(ethers.utils.parseUnits("5"), 5000);
+    it('set for first time', async () => {
+      //Execute
+      await stakingContract.connect(stakingOwner).setNextReward(ethers.utils.parseUnits("5"), 3600);
 
       //Asserts
-      expect(await stakingContract.rewardRate()).to.be.eq(ethers.utils.parseUnits("5").div(5000));
-      expect(await stakingContract.rewardPerTokenStored()).to.be.eq(ethers.utils.parseUnits("18", 16));
+      expect(await stakingContract.rewardRate()).to.be.eq(ethers.utils.parseUnits("5").div(3600));
 
       const latestBlock = await ethers.provider.getBlock("latest");
-      expect(await stakingContract.finishAt()).to.be.eq(latestBlock.timestamp + 5000);
-      expect(await stakingContract.updatedAt()).to.be.eq(latestBlock.timestamp);
+      expect(await stakingContract.finishAt()).to.be.eq(latestBlock.timestamp + 3600);
+      expect(await stakingContract.updatedAt()).to.be.eq(latestBlock.timestamp || 0);
     });
   });
 })
