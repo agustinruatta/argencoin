@@ -85,7 +85,21 @@ describe('Staking', function () {
     })
 
     it('stakes', async () => {
-      await stakingContract.connect(stakingOwner).notifyRewardAmount(1000, 500);
+      await stakingContract.connect(stakingOwner).setNextReward(ethers.utils.parseUnits("5"), 3600);
+    });
+  });
+
+  describe('setNextReward', () => {
+    it('set for first time', async () => {
+      //Execute
+      await stakingContract.connect(stakingOwner).setNextReward(ethers.utils.parseUnits("5"), 3600);
+
+      //Asserts
+      expect(await stakingContract.rewardRate()).to.be.eq(ethers.utils.parseUnits("5").div(3600));
+
+      const latestBlock = await ethers.provider.getBlock("latest");
+      expect(await stakingContract.finishAt()).to.be.eq(latestBlock.timestamp + 3600);
+      expect(await stakingContract.updatedAt()).to.be.eq(latestBlock.timestamp || 0);
     });
   });
 })

@@ -108,9 +108,9 @@ contract Staking is Ownable {
 
     /**
      * @param amount Amount of reward token to give in duration.
-     * @param duration Duration of rewards to be paid out (in seconds)
+     * @param duration Duration (in seconds) that rewards will be paid out.
      */
-    function notifyRewardAmount(uint amount, uint duration)
+    function setNextReward(uint amount, uint duration)
         external
         onlyOwner
         updateReward(address(0))
@@ -131,8 +131,6 @@ contract Staking is Ownable {
             rewardRate * duration <= rewardToken.balanceOf(address(this)),
             "reward amount > balance"
         );
-
-        //TODO: Transfer to this contract
 
         finishAt = block.timestamp + duration;
         updatedAt = block.timestamp;
