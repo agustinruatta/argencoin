@@ -93,6 +93,7 @@ REPORT_GAS=true npx hardhat test
 ```shell
 npx hardhat node
 npx hardhat run --network localhost scripts/deploy.ts
+cd frontend-demo && npm install && npm run serve
 ```
 
 ## Ubiquitous language
