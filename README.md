@@ -97,6 +97,7 @@ In order to run tests, execute
 ```shell
 npx hardhat test
 REPORT_GAS=true npx hardhat test
+npx hardhat coverage
 ```
 
 ## Deploy on localhost
