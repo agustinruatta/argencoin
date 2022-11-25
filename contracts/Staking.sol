@@ -66,22 +66,22 @@ contract Staking is Ownable {
         _;
     }
 
-    function stake(uint256 _amount) external updateReward(msg.sender) {
-        require(_amount > 0, "Amount to stake must be greater than 0");
+    function stake(uint256 amount) external updateReward(msg.sender) {
+        require(amount > 0, "Amount to stake must be greater than 0");
 
-        argencoinToken.safeTransferFrom(msg.sender, address(this), _amount);
+        argencoinToken.safeTransferFrom(msg.sender, address(this), amount);
 
-        balanceOf[msg.sender] += _amount;
-        totalSupply += _amount;
+        balanceOf[msg.sender] += amount;
+        totalSupply += amount;
     }
 
-    function withdraw(uint256 _amount) external updateReward(msg.sender) {
-        require(_amount > 0, "Amount to withdraw must be greater than 0");
+    function withdraw(uint256 amount) external updateReward(msg.sender) {
+        require(amount > 0, "Amount to withdraw must be greater than 0");
 
-        balanceOf[msg.sender] -= _amount;
-        totalSupply -= _amount;
+        balanceOf[msg.sender] -= amount;
+        totalSupply -= amount;
 
-        argencoinToken.safeTransfer(msg.sender, _amount);
+        argencoinToken.safeTransfer(msg.sender, amount);
     }
 
     function collectReward() external updateReward(msg.sender) {
