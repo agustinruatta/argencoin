@@ -37,10 +37,10 @@ contract CentralBank is Ownable {
 
     uint16 private constant ONE_HUNDRED_BASIC_POINTS = 10000;
     uint64 private constant ONE_COLLATERAL_TOKEN_UNIT = 10**18;
-    
-    
+
+
     //TODO: EVENTOS
-    
+
     constructor(
         address ownerAddress,
         address _argencoinAddress,
@@ -95,7 +95,6 @@ contract CentralBank is Ownable {
     }
 
     function addNewCollateralToken(string memory tokenSymbol, address erc20Contract, address stakingContract) external onlyOwner {
-        //TODO: ask for RatesOracle defintion
         require(address(collateralContracts[tokenSymbol]) == address(0), "Token is already set. Please, call 'editColleteralToken' function.");
 
         collateralContracts[tokenSymbol] = IERC20(erc20Contract);
@@ -203,7 +202,7 @@ contract CentralBank is Ownable {
     function liquidatePosition(address positionOwner, string memory collateralTokenSymbol) external {
         //Check if position exists
         Position memory position = positions[positionOwner][collateralTokenSymbol];
-        require(position.mintedArgcAmount > 0, "Position not found"); 
+        require(position.mintedArgcAmount > 0, "Position not found");
 
         //Check if position can be liquidated
         uint256 argencoinCollateralRate = ratesContract.getArgencoinRate(collateralTokenSymbol);
