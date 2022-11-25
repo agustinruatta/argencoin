@@ -43,8 +43,7 @@ async function main() {
 Argencoin deployed to ${argencoinContract.address}.
 RatesOracle deployed to ${ratesOracleContract.address}.
 Dai deployed to ${daiContract.address}.
-Staking deployed to ${stakingContract.address}.
-CentralBank deployed to ${centralBankContract.address}.`
+Staking deployed to ${stakingContract.address}.`
   
   console.log(logMessage);
 }

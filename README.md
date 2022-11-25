@@ -91,7 +91,8 @@ REPORT_GAS=true npx hardhat test
 ## Deploy on localhost
 
 ```shell
-npx hardhat node & npx hardhat run --network localhost scripts/deploy.ts
+npx hardhat node
+npx hardhat run --network localhost scripts/deploy.ts
 ```
 
 ## Ubiquitous language
