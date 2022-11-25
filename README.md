@@ -25,7 +25,7 @@ El proceso de minting tiene un fee, y es sobre la stablecoin. Si el mismo es del
 Siguiendo con el ejemplo anterior, un issuer deposita 10 USDC y decide emitir el máximo posible de ARGC. Esto generaría que:
 - 0.1 USDC son fees.
 - 9.90 son usados como colateral. Como 1 USDC está a 300 ARS, entonces el colateral equivale a 9.90 * 300 = 2970 ARS.
-- Debido a que el collateral percentage es de 150%, entonces emitirá un máximo de 1980 ARGC (9.90 USDC * 300 ARGCUSDC* 100%150%).
+- Debido a que el collateral percentage es de 150%, entonces emitirá un máximo de 1980 ARGC (9.90 USDC * (300 ARGC / USDC) * (100% / 150%)).
 
 ### Burning
 En cualquier momento el issuer de las monedas puede devolver los ARGC emitidos para recuperar su colateral.
@@ -77,12 +77,14 @@ FEE_AMOUNT = cantidad de stablecoins que se descuenta como fee.
 FEE_PERCENTAGE = porcentaje de fee sobre el proceso de minting.
 
 ### Ecuaciones
-MINTED_AMOUNT = (STABLECOIN_AMOUNT - FEE_AMOUNT) * STABLECOIN_PRICE * (100% / COLLATERAL_PERCENTAGE)
+MAX_MINTED_AMOUNT = (STABLECOIN_AMOUNT - FEE_AMOUNT) * STABLECOIN_PRICE * (100% / COLLATERAL_PERCENTAGE)
 FEE_AMOUNT = STABLECOIN_AMOUNT * (FEE_PERCENTAGE / 100%)
-LIQUIDATION_VALUE = STABLECOIN_PRICE * (COLLATERAL_PERCENTAGE / 100%) * LIQUIDATION_PERCENTAGE
+LIQUIDATION_VALUE = (MINTED_ARGS * (10**18) * LIQUIDATION_PERCENTAGE) / (COLLATERAL_TOKENS_AMOUNT); 
+
+STABLECOIN_PRICE * (COLLATERAL_PERCENTAGE / 100%) * LIQUIDATION_PERCENTAGE
 
 ### Ejemplo ecuaciones
-MINTED_AMOUNT= (10 USDC - 0.1 USDC) * (300 ARGC/USDC) * (100% / 150%) = 1980 ARGC
+MAX_MINTED_AMOUNT= (10 USDC - 0.1 USDC) * (300 ARGC/USDC) * (100% / 150%) = 1980 ARGC
 
 FEE_AMOUNT = 10 USDC * (1% / 100%) = 0.1 USDC
 
