@@ -121,7 +121,7 @@ contract CentralBank is Ownable {
     }
 
     function calculateFeeAmount(uint256 argencoinCollateralRate, uint256 argencoinAmount) public view returns (uint256) {
-        //Future improvement: make calculous clearer
+        //Future improvement: make calculus clearer
 
         uint256 argencoinsAfterFee = (argencoinAmount * ONE_HUNDRED_BASIC_POINTS) / (ONE_HUNDRED_BASIC_POINTS - mintingFeeBasicPoints);
         uint256 afterAppliedCollateral = (argencoinsAfterFee * collateralBasicPoints) / ONE_HUNDRED_BASIC_POINTS;

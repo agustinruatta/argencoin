@@ -57,14 +57,23 @@ Al hacer staking, los usuarios reciben ARGV. El mismo permite dos utilidades:
 
 ### Definiciones
 ARS = moneda de curso legal de la República Argentina.
+
 USD = moneda de curso legal de los Estados Unidos de América.
+
 COLLATERAL_PERCENTAGE = porcentaje de colateral requerido.
+
 LIQUIDATION_PERCENTAGE = porcentaje límite en el cual, debajo del mismo, la posición puede ser liquidada.
+
 STABLECOIN_PRICE = precio de la stablecoin (como USDC) expresados en ARS.
+
 STABLECOIN_AMOUNT = cantidad de stablecoin que se dejó como garantía.
+
 MINTED_AMOUNT = Cantidad de ARGC que pueden ser emitidos.
+
 LIQUIDATION_VALUE = precio del USD, expresado en ARS, en la cual la posición puede ser liquidada.
+
 FEE_AMOUNT = cantidad de stablecoins que se descuenta como fee.
+
 FEE_PERCENTAGE = porcentaje de fee sobre el proceso de minting.
 
 ### Ecuaciones
