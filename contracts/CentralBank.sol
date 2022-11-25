@@ -39,7 +39,9 @@ contract CentralBank is Ownable {
     uint64 private constant ONE_COLLATERAL_TOKEN_UNIT = 10**18;
 
 
-    //TODO: EVENTOS
+    event MintedArgecoins(address minter, uint256 argcAmount, string collateralTokenSymbol, uint256 collateralTokenAmount);
+    event BurnedArgecoins(address burner, string collateralTokenSymbol);
+    event PositionLiquidated(address liquidator, address positionOwner, string collateralTokenSymbol, uint256 liquidationPriceLimit, uint256 argencoinCollateralRate);
 
     constructor(
         address ownerAddress,
@@ -89,7 +91,6 @@ contract CentralBank is Ownable {
         return mintingFeeBasicPoints;
     }
 
-    //TODO: it does not make sense
     function getPosition(address userAddress, string memory token) public view returns (Position memory) {
         return positions[userAddress][token];
     }
@@ -157,6 +158,8 @@ contract CentralBank is Ownable {
 
         //Mint argencoin
         argencoinContract.mint(msg.sender, argcAmount);
+
+        emit MintedArgecoins(msg.sender, argcAmount, collateralTokenSymbol, collateralTokenAmount);
     }
 
     function _transferArgencoinCollateral(IERC20 collateralContract, uint256 collateralTokenAmountAfterFee) private {
@@ -193,6 +196,8 @@ contract CentralBank is Ownable {
         //Return collateral
         IERC20 collateralContract = getCollateralTokenContract(collateralTokenSymbol);
         collateralContract.safeTransfer(msg.sender, collateralAmount);
+
+        emit BurnedArgecoins(msg.sender, collateralTokenSymbol);
     }
 
     function calculateLiquidationPriceLimit(uint256 mintedArgencoinsAmount, uint256 _liquidationBasicPoints, uint256 collateralTokensAmount) public pure returns (uint256) {
@@ -206,7 +211,8 @@ contract CentralBank is Ownable {
 
         //Check if position can be liquidated
         uint256 argencoinCollateralRate = ratesContract.getArgencoinRate(collateralTokenSymbol);
-        require(argencoinCollateralRate < position.liquidationPriceLimit, "Position is not under liquidation value");
+        uint256 liquidationPriceLimit = position.liquidationPriceLimit;
+        require(argencoinCollateralRate < liquidationPriceLimit, "Position is not under liquidation value");
 
         //Delete position
         delete positions[positionOwner][collateralTokenSymbol];
@@ -217,5 +223,7 @@ contract CentralBank is Ownable {
 
         //Give DAI
         getCollateralTokenContract(collateralTokenSymbol).safeTransfer(msg.sender, position.collateralAmount);
+
+        emit PositionLiquidated(msg.sender, positionOwner, collateralTokenSymbol, liquidationPriceLimit, argencoinCollateralRate);
     }
 }
