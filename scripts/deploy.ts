@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const [argcAdmin] = await ethers.getSigners();
+  const [argcAdmin, minter] = await ethers.getSigners();
   let centralBankOwner = argcAdmin;
   let ratesOracleOwner = argcAdmin;
   let stakingOwner = argcAdmin;
@@ -37,6 +37,7 @@ async function main() {
   await centralBankContract.deployed();
 
   await argencoinContract.grantRole(await argencoinContract.MINTER_ROLE(), centralBankContract.address);
+  await daiContract.mint(minter.address, ethers.utils.parseUnits('1000'));
 
   let logMessage = `CentralBank deployed to ${centralBankContract.address}.
 Argencoin deployed to ${argencoinContract.address}.
